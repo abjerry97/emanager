@@ -1,8 +1,8 @@
 {
     "version": 2,
-    "name": "name-of-your-vercel-app",
+    "name": "emanager",
     "builds": [
-      { "src": "script.js", "use": "@vercel/node" }
+      { "src": "index.js", "use": "@vercel/node" }
     ],
     "routes": [
       { "src": "/(.*)", "dest": "/index.js" }
