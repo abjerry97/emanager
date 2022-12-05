@@ -1,18 +1,8 @@
 const Controller = require("../controllers/controller");
 const express = require("express");
-const { isAuth, travelMode } = require("../utils");
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = require("twilio")(accountSid, authToken);
-
-client.messages;
-
-// .create({
-// from: `${process.env.TWILIO_PHONENUM}`,
-//    to: "+234 811 847 4456",
-//    body: "Hello from Twilio",
-//  })
-// .then(message => console.log(message)).catch((err)=>{console.log(err)});
+const { isAuth, travelMode } = require("../utils"); 
+ 
+ 
 
 const guestRoute = express.Router();
 
