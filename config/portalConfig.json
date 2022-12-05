@@ -1,0 +1,29 @@
+{
+  "propertyCategory": {
+    "Apartments for Rent": {
+      "category": "rent",
+      "type": "Apartment"
+    },
+    "Apartments for Sale": { "category": "sale", "type": "Apartment" },
+    "Commercial Property for Rent": {
+      "category": "rent",
+      "type": "Commercial Property"
+    },
+    "Land for Sale": {
+      "category": "sale",
+      "type": "land"
+    },
+    "Land for Rent": {
+      "category": "rent",
+      "type": "land"
+    },
+    "Property for Events": {
+      "category": "event",
+      "type": "property"
+    },
+    "Property for Shortlets": {
+      "category": "shortlet",
+      "type": "property"
+    }
+  }
+}

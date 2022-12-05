@@ -1,0 +1,33 @@
+{
+  "excoRole": ["Chaiman", "Vice Chairman", "others"],
+  "isTopmost": ["false", "true"],
+  "status": ["inactive", "active"],
+  "isAdmin": ["inactive", "active"],
+  "isPrimary": ["inactive", "active"],
+  "gatePassStatus": ["deleted", "active", "checked"],
+  "ownerType": [
+    "user",
+    "admin",
+    "guest",
+    "security",
+    "family member",
+    "business",
+    "service",
+    "protaluser"
+  ],
+  "gatePassType": ["taxi", "rider", "guest", "event"],
+  "billType": ["water bill", "estate levy", "waste bill", "project bill"],
+  "billStatusType": ["prepaid", "postpaid"],
+  "houseOwnerType": ["landlord", "tenant", "family member"],
+  "BusinessType": ["service", "company"],
+  "serviceCategory": ["", ""],
+  "emergencyMode": ["off", "on"],
+  "walletTopUp": ["Airtime", "Data Bundle"],
+  "propertyStatus": ["Sale", "Lease", "Rent"],
+  "utilityProvider": ["Electricity", "CableTv", "ePin"],
+  "buildingType": ["Commercial", "Private" ],
+  "currencies": [
+    ["Naira", "NGN", "₦", "k"],
+    ["US Dollar", "USD", "$", "¢"]
+  ]
+}
