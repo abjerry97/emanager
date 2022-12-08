@@ -32,7 +32,7 @@ const dbHost = process.env.HOST || "localhost";
 const dbName = process.env.DATABASE || "qpay-estate-management-app";
 mongoose
   .connect(
-    true
+    isProduction
       ? `${process.env.DATABASE_URI}`
       : `mongodb://${dbHost}:27017/${dbName}`,
     {
