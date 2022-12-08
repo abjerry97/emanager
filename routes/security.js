@@ -1,6 +1,5 @@
 const express = require("express");
-const Controller = require("../controllers/controller");
-const { isAuth, isSecurity } = require("../utils");
+const Controller = require("../controllers/controller"); 
 function securityRoute() {
   const router = express.Router();
   router

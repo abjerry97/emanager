@@ -17,17 +17,13 @@ const HouseAddressName = require("../../model/house-address");
 const Name = require("../../model/name");
 const Password = require("../../model/password");
 const PhoneNumber = require("../../model/phone-number"); 
-const User = require("../../model/user");
-const {
-  generateToken,
-  generateTokenAdmin,
-  generateTokenSecurity,
-} = require("../../utils");
+const User = require("../../model/user"); 
 const Security = require("../../model/security");
 const UserEstate = require("../../model/user-estate"); 
 const Wallet = require("../QpayWallet/QpayWallet"); 
 const EmanagerWallet = require("../EmanagerWallet/EmanagerWallet");
 const RegisteredEstate = require("../../model/registered-estate");
+const { generateToken,generateTokenAdmin } = require("../../utils/tokenGenerator");
 class PortalAuthentication {
   constructor(req, res, next) {
     this.req = req;

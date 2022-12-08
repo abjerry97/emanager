@@ -7,8 +7,7 @@ const {
   stringIsEqual,
   isValidMongoObjectId,
 } = require("../../helpers/validators");
-const crypto = require("crypto");
-const { generateWalletToken } = require("../../utils");
+const crypto = require("crypto"); 
 const EmanagerUserWallet = require("../../model/emanager-user-wallet");
 const EmanagerUserWalletSession = require("../../model/emanager-user-wallet-session");
 const EmanagerUserWalletBalance = require("../../model/emanager-user-wallet-balance");
@@ -18,6 +17,7 @@ const QpayWalletSessionToken = require("../../model/qpay-wallet-session-token");
 const QpayWallet = require("../QpayWallet/QpayWallet");
 const EmanagerEstateWallet = require("../../model/emanager-estate-wallet");
 const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
+const { generateWalletToken } = require("../../utils/tokenGenerator");
 
 class EmanagerWallet {
   constructor(req, res) {

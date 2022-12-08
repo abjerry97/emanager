@@ -14,7 +14,8 @@ const Authentication = require("../Authentication/auth");
 const Name = require("../../model/name");
 const Password = require("../../model/password");
 const { isHashedString } = require("../../helpers/tools");
-class Vote {
+const Estate = require("../Estate/Estate");
+class Vote extends Estate {
   constructor(req, res, next) {
     super();
     this.req = req;

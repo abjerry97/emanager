@@ -7,12 +7,11 @@ const {
 } = require("../../helpers/validators");
 const GatePass = require("../../model/gate-pass");
 const Guest = require("../../model/guest");
-const HouseAddressName = require("../../model/house-address");
-const RegisteredEstate = require("../../model/registered-estate");
-const Authentication = require("../Authentication/auth");
-const Visitor = require("../Visitor/Visitor");
-class Security {
+const HouseAddressName = require("../../model/house-address"); 
+const Estate = require("../Estate/Estate");
+class Security extends Estate {
   constructor(req, res, next) {
+    super();
     this.req = req;
     this.res = res;
     this.next = next;
@@ -182,31 +181,7 @@ class Security {
     return foundGuest;
   }
 
-  async __findEstate(estateId) {
-    const createdOn = new Date();
-    if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
-      return this.res.json({
-        success: false,
-        message: "Invalid EstateId ",
-      });
-    }
-
-    const foundEstate = await RegisteredEstate.findOne({
-      status: 1,
-      _id: estateId,
-    });
-
-    if (!isValidMongoObject(foundEstate)) {
-      this.res.statusCode = 404
-      return this.res.json({
-        success: false,
-        message: "Estate not Found ",
-      });
-    }
-
-    return foundEstate;
-  }
+   
   async __invalidateCheckedPass(passId) {
     const createdOn = new Date();
 

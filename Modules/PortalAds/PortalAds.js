@@ -229,8 +229,7 @@ class PortalAds {
 
     (files||[]).map(async(image,index)=> {
 
- 
-      console.log("newlyCreatedImage",image)
+  
 
       const fileName = "image" + Date.now()+ index;
       try {
@@ -264,8 +263,7 @@ class PortalAds {
         message: "Sorry! error while creating PostAd image",
       });
     }
-
-    console.log("newlyCreatedPostAdImages2",newlyCreatedPostAdImages)
+ 
 
     const addProperty = await this.__addProperty(
       title,

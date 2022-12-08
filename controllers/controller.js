@@ -598,13 +598,7 @@ class Controller {
     return await new Estate(this.req, this.res, this.next).__createEstate();
   }
 
-  async findEstate() {
-    return await new Estate(
-      this.req,
-      this.res,
-      this.next
-    ).__findEstateWithQueryString();
-  }
+ 
   async findEstates() {
     return await new Estate(this.req, this.res, this.next).__findAllEstates();
   }
