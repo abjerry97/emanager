@@ -20,7 +20,7 @@ const businessSchemaObject = {
   ownerId:defaultString,
   estateId:defaultString,
   adType:defaultString,
-  image: [{ _id: defaultString, ...BusinessImage.getSchemaObject() }],
+  image: { _id: defaultString, ...BusinessImage.getSchemaObject() },
   ads:{ _id: defaultString, ...BusinessAd.getSchemaObject() },
   category:defaultString,
   name: { _id: defaultString, ...Name.getSchemaObject() },

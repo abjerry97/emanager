@@ -21,7 +21,7 @@ const defaultDate = {
 const adminSchemaObject = {
   status: defaultString, //0:deleted,1:active
   name: { _id: defaultString, ...Name.getSchemaObject() },
-  emails: { _id: defaultString, ...Email.getSchemaObject() },
+  emails: [{ _id: defaultString, ...Email.getSchemaObject() }],
   address: { _id: defaultString, ...HouseAddressName.getSchemaObject() },
   phoneNumbers: [{ _id: defaultString, ...PhoneNumber.getSchemaObject() }],
   officeName: { _id: defaultString, ...AdminOfficeName.getSchemaObject() },
@@ -49,7 +49,6 @@ const adminSchemaObject = {
     ...AdminGuarantorsEmail.getSchemaObject(),
   },
   userId: defaultString,
-  estateId: defaultString,
   isTopmost: defaultString,
   role: defaultString, //0:Chairman,1:Vice Chairman
   updates: [

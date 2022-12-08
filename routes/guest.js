@@ -1,7 +1,13 @@
 const Controller = require("../controllers/controller");
-const express = require("express");   
-const { isAuth, travelMode } = require("../utils/Middleware/Middleware");
- 
+const express = require("express");
+const { isAuth, travelMode } = require("../utils");   
+
+// .create({
+// from: `${process.env.TWILIO_PHONENUM}`,
+//    to: "+234 811 847 4456",
+//    body: "Hello from Twilio",
+//  })
+// .then(message => console.log(message)).catch((err)=>{console.log(err)});
 
 const guestRoute = express.Router();
 

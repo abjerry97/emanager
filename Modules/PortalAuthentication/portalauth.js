@@ -17,15 +17,17 @@ const HouseAddressName = require("../../model/house-address");
 const Name = require("../../model/name");
 const Password = require("../../model/password");
 const PhoneNumber = require("../../model/phone-number"); 
-const User = require("../../model/user"); 
+const User = require("../../model/user");
+const {
+  generateToken,
+  generateTokenAdmin,
+  generateTokenSecurity,
+} = require("../../utils");
 const Security = require("../../model/security");
 const UserEstate = require("../../model/user-estate"); 
 const Wallet = require("../QpayWallet/QpayWallet"); 
 const EmanagerWallet = require("../EmanagerWallet/EmanagerWallet");
 const RegisteredEstate = require("../../model/registered-estate");
-const { generateToken,generateTokenAdmin } = require("../../utils/tokenGenerator");
-const scheamaTools = require("../../helpers/scheamaTools");
-const crypto = require("crypto");
 class PortalAuthentication {
   constructor(req, res, next) {
     this.req = req;
@@ -840,11 +842,6 @@ class PortalAuthentication {
         message: "Error while creating user",
       });
     }
-    const newlyCreatedEmailVerify = await this.__verifyEmail(email, newUser);
- 
-    if (!isValidMongoObject(newlyCreatedEmailVerify)) {
-      return newlyCreatedEmailVerify;
-    }
 
     // const newUserMode = await new UserMode({})
     name.ownerId = newUser._id;
@@ -900,27 +897,6 @@ class PortalAuthentication {
       user: formatedUser,
       token: generateToken(newUser),
     });
-  }
-  async __verifyEmail(email, newUser) {
-    const createdOn = new Date()
-    const newlyCreatedEmailVerify = await scheamaTools.createEmailVerify({
-      status: 1,
-      value: email.value,
-      ownerId: email._id,
-      userId: newUser._id,
-      ownerType: 0,
-      createdOn,
-      createdBy: newUser._id,
-      expiresOn: new Date(createdOn.getTime() + 86400000),
-      token: crypto.randomBytes(16).toString("hex"),
-    });
-    if (!newlyCreatedEmailVerify) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating Email Verification link"
-      );
-    }
-    return newlyCreatedEmailVerify
   }
   async __portalUserLogin() {
     const createdOn = new Date();
@@ -994,7 +970,8 @@ if(stringIsEqual(user.isAdmin, "1")){
     );
     if (!isValidMongoObject(emanagerUserWalletlogin)) {
       return emanagerUserWalletlogin;
-    }} 
+    }}
+    console.log("emanagerUserWalletlogin",emanagerUserWalletlogin)
     return this.res.json({
       success: true,
       message: "User Login Successfully",

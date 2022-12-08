@@ -19,7 +19,7 @@ const defaultBoolean = {
 const userSchemaObject = {
   status: defaultString, //0:deleted,1:active
   type: defaultString,  
-  isVerified: defaultBoolean,
+  isVerified: defaultString,
   name: { _id: defaultString, ...Name.getSchemaObject() },
   emails: [{ _id: defaultString, ...Email.getSchemaObject() }],
   phoneNumbers: [{ _id: defaultString, ...PhoneNumber.getSchemaObject() }],

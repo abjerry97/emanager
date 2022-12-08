@@ -1,11 +1,50 @@
 const express = require("express");
-const Controller = require("../controllers/controller"); 
+const Controller = require("../controllers/controller");
+const { isAuth, isAdmin, travelMode } = require("../utils");
 const { guestRoute } = require("./guest");
 
-const { isAdmin, travelMode } = require("../utils/Middleware/Middleware");
- 
+// const swaggerJsDoc = require("swagger-jsdoc");
+// const swaggerUi = require("swagger-ui-express");
+// const swaggerOptions = {
+//   swaggerDefinition: {
+//     info: {
+//       title: "e-manager api",
+//       description: "custom api information",
+//       contact: {
+//         name: "amazing developer",
+//       },
+//       servers: ["https://qpayestatemanagementapp.herokuapp.com/"],
+//     },
+//   },
+//   // [".routes/*.js"]
+//   apis: ["./routes/admin.js"],
+// };
+
+// const swaggerDocs = swaggerJsDoc(swaggerOptions);
+// router.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// const swaggerJsDoc = require("swagger-jsdoc");
+// const swaggerUi = require("swagger-ui-express");
+// const swaggerOptions = {
+//   swaggerDefinition: {
+//     info: {
+//       title: "e-manager api",
+//       description: "custom api information",
+//       contact: {
+//         name: "amazing developer",
+//       },
+//       servers: ["https://qpayestatemanagementapp.herokuapp.com/"],
+//     },
+//   },
+//   // [".routes/*.js"]
+//   apis: ["./docs/admin/*.js"],
+// };
+// const swaggerDocs = swaggerJsDoc(swaggerOptions);
+
 function adminRoute(isAdminStatus) {
-  const router = express.Router(); 
+  const router = express.Router();
+
+  // router.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
   if (isAdminStatus) {
     router
       .route("/")
@@ -24,7 +63,10 @@ function adminRoute(isAdminStatus) {
     router.route("/login").post((req, res, next) => {
       return new Controller(req, res, next).adminLogin();
     });
- 
+
+    router.route("/estate").get((req, res, next) => {
+      return new Controller(req, res, next).findEstate();
+    });
 
     router.route("/estate").post((req, res, next) => {
       return new Controller(req, res, next).createEstate();
@@ -34,7 +76,7 @@ function adminRoute(isAdminStatus) {
       return new Controller(req, res, next).findEstates();
     });
 
-    router.route("/admins/create").post(isAdmin, travelMode, (req, res, next) => {
+    router.route("/create").post(isAdmin, travelMode, (req, res, next) => {
       return new Controller(req, res, next).adminCreate();
     });
 

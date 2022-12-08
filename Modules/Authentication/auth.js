@@ -20,6 +20,12 @@ const PhoneNumber = require("../../model/phone-number");
 const RegisteredEstate = require("../../model/registered-estate");
 const User = require("../../model/user");
 const crypto = require("crypto");
+const {
+  generateToken,
+  generateTokenAdmin,
+  generateTokenSecurity,
+  sendEmailNovuNotification,
+} = require("../../utils");
 const Security = require("../../model/security");
 const UserEstate = require("../../model/user-estate");
 const UserMode = require("../../model/user-mode");
@@ -33,7 +39,7 @@ const ServiceEstateLinking = require("../../model/service-estate-linking");
 const BusinessEstateLinking = require("../../model/business-estate-linking");
 const PropertyEstateLinking = require("../../model/property-estate-linking");
 const QpayWallet = require("../QpayWallet/QpayWallet");
-const EmanagerWallet = require("../EmanagerWallet/EmanagerWallet");
+const EmanagerWallet = require("../EmanagerWallet/EmanagerWallet"); 
 const EmailVerify = require("../../model/email-verify");
 const { adminScheama } = require("../../helpers/projections");
 const AdminOfficeName = require("../../model/admin-office-name");
@@ -43,33 +49,41 @@ const AdminOfficeEmail = require("../../model/admin-office-email");
 const AdminGuarantorsName = require("../../model/admin-guarantor-name");
 const AdminGuarantorsPhoneNumber = require("../../model/admin-guarantor-phonenumber");
 const AdminGuarantorsEmail = require("../../model/admin-guarantor-name-email");
-const {
-  generateToken,
-  generateTokenAdmin,
-  generateTokenSecurity,
-} = require("../../utils/tokenGenerator");
-const responseBody = require("../../helpers/responseBody");
-const Estate = require("../Estate/Estate");
-const scheamaTools = require("../../helpers/scheamaTools");
-class Authentication extends Estate {
+class Authentication {
   constructor(req, res, next) {
-    super();
     this.req = req;
     this.res = res;
-    this.next = next;
+    this.next = next; 
     this.emanagerWallet = new EmanagerWallet(this.req, this.res);
+
+    
   }
 
   async __createName(name, type, isAdmin) {
     const createdOn = new Date();
+    if (!isValidFullName(name)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You need to provide a valid name",
+      });
+    }
 
-    const newUserName = await scheamaTools.createName({
+    const newUserName = await new Name({
       status: 1, //0:inactive,1:active
       value: name,
       ownerType: type,
       createdOn,
       isAdmin: !!isAdmin && !isNaN(isAdmin) ? isAdmin : 0,
     });
+
+    if (!isValidMongoObject(newUserName)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating name",
+      });
+    }
 
     return newUserName;
   }
@@ -80,37 +94,46 @@ class Authentication extends Estate {
       !isValidMongoObjectId(userId) ||
       !isValidMongoObjectId(adminId)
     ) {
-      return responseBody.noMethodAllowedResponse(
-        this.res,
-        "You need to provide a valid id"
-      );
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You need to provide a valid id",
+      });
     }
     if (isNaN(isTopmost)) {
-      return responseBody.noMethodAllowedResponse(
-        this.res,
-        "Invalid topmost specifier"
-      );
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid topmost specifier",
+      });
     }
 
-    const newAdmin = await scheamaTools.createAdmin({
+    const newAdmin = await new Admin({
       status: 1, //0:deleted,1:active
       userId: userId,
       isTopmost,
-      estateId,
       createdBy: adminId, // admin ID of the admin who created this entry
       createdOn,
     });
 
-    if (!newAdmin) {
-      return responseBody.ErrorResponse(this.res, "Error while creating admin");
+    if (!isValidMongoObject(newAdmin)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating admin",
+      });
     }
 
-    const userEstate = await this.__createUserEstate(newAdmin._id, estateId, 1);
+    const userEstate = await this.__createUserEstate(newAdmin._id, estateId, 2);
 
     if (!isValidMongoObject(userEstate)) {
-      return  userEstate
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating user estate",
+      });
     }
-    const userMode = await this.__createUserMode(newAdmin._id, estateId, 1);
+    const userMode = await this.__createUserMode(newAdmin._id, estateId, 2);
 
     if (!isValidMongoObject(userMode)) {
       return userMode;
@@ -120,28 +143,29 @@ class Authentication extends Estate {
   async __createSecurity(estateId, adminId) {
     const createdOn = new Date();
     if (!isValidMongoObjectId(estateId) || !isValidMongoObjectId(adminId)) {
-      return responseBody.noMethodAllowedResponse(
-        this.res,
-        "You need to provide a valid id"
-      );
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You need to provide a valid id",
+      });
     }
 
-    const name = await this.__createName(this.req.body.name, 2);
+    const name = await this.__createName(this.req.body.name, 3);
 
     if (!isValidMongoObject(name)) {
       return name;
     }
-    const email = await this.__createEmail(this.req.body.email, 2, 1, 0);
+    const email = await this.__createEmail(this.req.body.email, 3, 1, 0);
     if (!isValidMongoObject(email)) {
       return email;
     }
-    const phone = await this.__createPhonenumber(this.req.body.phone, 2, 1, 0);
+    const phone = await this.__createPhonenumber(this.req.body.phone, 3, 1, 0);
 
     if (!isValidMongoObject(phone)) {
       return phone;
     }
 
-    const password = await this.__createPassword(this.req.body.password, 2);
+    const password = await this.__createPassword(this.req.body.password, 3);
 
     if (!isValidMongoObject(password)) {
       return password;
@@ -149,7 +173,7 @@ class Authentication extends Estate {
 
     const houseAddress = await this.__createHouseAddress(
       this.req.body.houseAddress || "security house",
-      2,
+      3,
       estateId,
       "",
       ""
@@ -161,7 +185,7 @@ class Authentication extends Estate {
 
     const newSecurity = await new Security({
       status: 1, //0:deleted,1:active
-      ownerType: 2,
+      ownerType: 3,
       estateId,
       createdBy: adminId, // admin ID of the admin who created this entry
       createdOn,
@@ -169,21 +193,33 @@ class Authentication extends Estate {
 
     if (!isValidMongoObject(newSecurity)) {
       this.res.statusCode = 500;
-      
-      return responseBody.ErrorResponse( this.res ,  "Error while creating security") 
-    } 
+      return this.res.json({
+        success: false,
+        message: "Error while creating security",
+      });
+    }
+    if (!isValidMongoObjectId(newSecurity._id)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating security",
+      });
+    }
     const userEstate = await this.__createUserEstate(
       newSecurity._id,
       estateId,
-      2
+      3
     );
 
-    if (!userEstate) {
-      return userEstate
-    
+    if (!isValidMongoObject(userEstate)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating user estate",
+      });
     }
 
-    const userMode = await this.__createUserMode(newSecurity._id, estateId, 2);
+    const userMode = await this.__createUserMode(newSecurity._id, estateId, 3);
 
     if (!isValidMongoObject(userMode)) {
       return userMode;
@@ -215,84 +251,105 @@ class Authentication extends Estate {
     const { _id: estateId } = this.res.estate || "";
     const createdOn = new Date();
     if (!isValidMongoObjectId(estateId) || !isValidMongoObjectId(userId)) {
-     return responseBody.ErrorResponse(this.res, "You didn't provide a valid id");
-    } 
-if(!this.res.user.isVerified){
-  return responseBody.ErrorResponse(this.res, "Account not yet verified");
-}
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You didn't provide a valid id",
+      });
+    }
+
     const existingTopmostAdmin = await this.__findTopmostAdmin();
-    if (existingTopmostAdmin) {
-      return responseBody.noMethodAllowedResponse(
-        this.res,
-        "Topmost Admin already exist"
-      );
+    if (isValidMongoObject(existingTopmostAdmin)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Topmost Admin already exist",
+      });
     }
-    const foundUserPhonenumber = await scheamaTools.findPhoneNumber({
+    const foundUserPhonenumber = await PhoneNumber.findOne({
       status: 1,
       isPrimary: 1,
       ownerId: userId,
     });
 
-    if (!foundUserPhonenumber) {
-      return responseBody.notFoundResponse(this.res, "phone number not found");
-    }
-    const foundUserEmail = await scheamaTools.findEmail({
-      status: 1,
-      isPrimary: 1,
-      ownerId: userId,
-    });
-
-    if (!foundUserEmail) {
+    if (!isValidMongoObject(foundUserPhonenumber)) {
       this.res.statusCode = 404;
-      return responseBody.notFoundResponse(this.res, "Email not found");
+      return this.res.json({
+        success: false,
+        message: "phone number not found",
+      });
     }
-    const foundUserfullName = await scheamaTools.findName({
+    const foundUserEmail = await Email.findOne({
+      status: 1,
+      isPrimary: 1,
+      ownerId: userId,
+    });
+
+    if (!isValidMongoObject(foundUserEmail)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Email not found",
+      });
+    }
+    const foundUserfullName = await Name.findOne({
       status: 1,
       ownerId: userId,
     });
 
-    if (!foundUserfullName) {
-      return responseBody.notFoundResponse(this.res, "Name not found ");
+    if (!isValidMongoObject(foundUserfullName)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Name not found ",
+      });
     }
-    const newAdmin = await scheamaTools.createAdmin({
+    const newAdmin = await new Admin({
       status: 1, //0:deleted,1:active
       userId,
       isTopmost: 1,
-      estateId,
-      role: "Supreme Admin",
+      role: topmost,
       createdOn,
     });
 
-    if (!newAdmin) {
-      return responseBody.ErrorResponse(this.res, "Error while creating admin");
+    if (!isValidMongoObject(newAdmin)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating admin",
+      });
     }
     const userEstate = await this.__createUserEstate(newAdmin._id, estateId, 1);
 
-    if (!userEstate) {
+    if (!isValidMongoObject(userEstate)) {
       return userEstate;
     }
 
     const userMode = await this.__createUserMode(newAdmin._id, estateId, 1);
 
-    if (!userMode) {
+    if (!isValidMongoObject(userMode)) {
       return userMode;
     }
     newAdmin.adminId = newAdmin._id;
     newAdmin.createdBy = newAdmin._id;
     const password = process.env.DEFAULT_TOPMOST_ADMIN_PASSWORD || "";
 
-    if (!isValidPassword(password)) {
-      return responseBody.ErrorResponse(this.res, "Invalid Default password");
+    if (isNaN(password) || password.length < 4) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid Default password",
+      });
     }
     const adminPassword = await this.__createPassword(password, 1);
-    if (!adminPassword) {
+    if (!isValidMongoObject(adminPassword)) {
       return adminPassword;
     }
 
     adminPassword.ownerId = newAdmin._id;
-    const adminUpdates = {};
+
     try {
-      const updateEmail = await Email.findOneAndUpdate(
+      const updateEmail = await Email.updateOne(
         {
           status: 1,
           isAdmin: 0,
@@ -302,16 +359,13 @@ if(!this.res.user.isVerified){
         },
         {
           $set: { isAdmin: "1", adminId: newAdmin._id },
-        },
-        { new: true }
+        }
       );
-
-      adminUpdates.emails = updateEmail;
     } catch (err) {
       console.log(err);
     }
     try {
-      const updatePhoneNumber = await PhoneNumber.findOneAndUpdate(
+      const updatePhoneNumber = await PhoneNumber.updateOne(
         {
           status: 1,
           // isAdmin: 0,
@@ -321,16 +375,14 @@ if(!this.res.user.isVerified){
         },
         {
           $set: { isAdmin: "1", adminId: newAdmin._id },
-        },
-        { new: true }
+        }
       );
-      adminUpdates.phoneNumbers = updatePhoneNumber;
     } catch (err) {
       console.log(err);
     }
 
     try {
-      const updateName = await Name.findOneAndUpdate(
+      const updateName = await Name.updateOne(
         {
           status: 1,
           isAdmin: 0,
@@ -339,40 +391,51 @@ if(!this.res.user.isVerified){
         },
         {
           $set: { isAdmin: "1", adminId: newAdmin._id },
-        },
-        { new: true }
+        }
       );
-      adminUpdates.name = updateName;
     } catch (err) {
       console.log(err);
     }
 
-    const foundAdminPhonenumber = await scheamaTools.findPhoneNumber({
+    const foundAdminPhonenumber = await PhoneNumber.findOne({
       status: 1,
+      isAdmin: 1,
+      isPrimary: 1,
       ownerId: userId,
     });
 
-    if (!foundAdminPhonenumber) {
-      return responseBody.notFoundResponse(
-        this.res,
-        "Admin phone number not found"
-      );
+    if (!isValidMongoObject(foundAdminPhonenumber)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Admin phone number not found",
+      });
     }
-    const foundAdminEmail = await scheamaTools.findEmails({
+    const foundAdminEmail = await Email.findOne({
       status: 1,
+      isAdmin: 1,
+      isPrimary: 1,
       ownerId: userId,
     });
 
-    if (!foundAdminEmail) {
-      return responseBody.notFoundResponse(this.res, "Admin Email not found");
+    if (!isValidMongoObject(foundAdminEmail)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Admin Email not found",
+      });
     }
-    const foundAdminfullName = await scheamaTools.findName({
+    const foundAdminfullName = await Name.findOne({
       status: 1,
       ownerId: userId,
     });
 
-    if (!foundAdminfullName) {
-      return responseBody.findName(this.res, "Admin Name not found");
+    if (!isValidMongoObject(foundAdminfullName)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Admin Name not found",
+      });
     }
     const userUpdatableSet = {};
     const userUpdatablePush = {};
@@ -411,36 +474,42 @@ if(!this.res.user.isVerified){
       message: "Topmost admin created succesfully",
     });
   }
-  async __checkExistingPhoneNumber(phone, type) {
-    const formattedPhonenumber = formatPhonenumber(phone);
-    const query = {
-      status: 1,
-      value: formattedPhonenumber[1] || "",
-      countryCode: formattedPhonenumber[0] || "",
-    };
-    if (!isNaN(type) || type?.length > 0) {
-      query.ownerType = type;
-    }
-    const existingPhoneneumber = await scheamaTools.findPhoneNumber(query);
-    return existingPhoneneumber;
-  }
+
   async __createPhonenumber(phone, type, isPrimary, isAdmin) {
     const createdOn = new Date();
     const phonenumber = phone;
-
-    const formattedPhonenumber = formatPhonenumber(phonenumber);
-    const existingPhoneneumber = await this.__checkExistingPhoneNumber(
-      phone,
-      type
-    ); 
-    if (existingPhoneneumber) {
-      return responseBody.noMethodAllowedResponse(
-        this.res,
-        "phonenumber already exist"
-      );
+    if (!isValidPhonenumber(phone)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "phonenumber not valid",
+      });
     }
 
-    const newPhonenumber = await scheamaTools.createPhoneNumber({
+    if (isNaN(type) || isNaN(isPrimary)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid type specifier",
+      });
+    }
+
+    const formattedPhonenumber = formatPhonenumber(phonenumber);
+    const existingPhoneneumber = await PhoneNumber.findOne({
+      value: formattedPhonenumber[1] || "",
+      countryCode: formattedPhonenumber[0] || "",
+      ownerType: type,
+    });
+
+    if (isValidMongoObject(existingPhoneneumber)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "phonenumber already exist",
+      });
+    }
+
+    const newPhonenumber = await new PhoneNumber({
       status: 1, //0:inactive,1:active
       value: formattedPhonenumber[1] || "",
       countryCode: formattedPhonenumber[0] || "",
@@ -451,39 +520,45 @@ if(!this.res.user.isVerified){
       createdOn,
     });
 
-    if (!newPhonenumber) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating phonenumber"
-      );
+    if (!isValidMongoObject(newPhonenumber)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating phonenumber",
+      });
     }
 
     return newPhonenumber;
   }
-  async __checkExistingEmail(email, type) {
-    const query = {
-      status: 1,
-      value: email,
-    };
-    if (!isNaN(type) || type?.length > 0) {
-      query.ownerType = type;
-    }
-    const existingEmail = await scheamaTools.findEmail(query);
-    return existingEmail;
-  }
   async __createEmail(email, type, isPrimary, isAdmin) {
     const createdOn = new Date();
-
-    const existingEmail = await this.__checkExistingEmail(email, type);
-
-    if (!!existingEmail) {
-      return responseBody.noMethodAllowedResponse(
-        this.res,
-        `Email ${email} Already Exist, try again with a new email`
-      );
+    if (!isEmail(email)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You need to provide a valid email",
+      });
     }
+    if (isNaN(type) || isNaN(isPrimary)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Invalid type specifier",
+      });
+    }
+    const existingEmail = await Email.findOne({
+      value: email,
+      ownerType: type,
+    });
 
-    const newUserEmail = await scheamaTools.createEmail({
+    if (isValidMongoObject(existingEmail)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "Email already exist",
+      });
+    }
+    const newUserEmail = await new Email({
       status: 1, //0:inactive,1:active
       value: email,
       isPrimary,
@@ -493,21 +568,27 @@ if(!this.res.user.isVerified){
       createdOn,
     });
 
-    if (!newUserEmail) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error creating email, please try again"
-      );
+    if (!isValidMongoObject(newUserEmail)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating email",
+      });
     }
 
     return newUserEmail;
   }
-
   async __createPassword(password, type) {
     const createdOn = new Date();
-
+    if (!isValidPassword(password)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You didn't provide a valid password",
+      });
+    }
     const encrytPassword = await this.__encryptPassword(password);
-    const newUserPassword = await scheamaTools.createPassword({
+    const newUserPassword = await new Password({
       status: 1, //0:inactive,1:active
       hashedForm: encrytPassword,
       isPrimary: 1,
@@ -515,12 +596,14 @@ if(!this.res.user.isVerified){
       createdOn,
     });
 
-    if (!newUserPassword) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating password, please try again"
-      );
+    if (!isValidMongoObject(newUserPassword)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating password",
+      });
     }
+
     return newUserPassword;
   }
   async __createHouseAddress(
@@ -531,8 +614,22 @@ if(!this.res.user.isVerified){
     apartmentType
   ) {
     const createdOn = new Date();
+    if (!!!houseAddress || houseAddress.length < 10) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You didn't provide a valid address",
+      });
+    }
+    if (!isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You didn't provide a valid estate id",
+      });
+    }
 
-    const newHouseAddress = await scheamaTools.createHouseAddress({
+    const newHouseAddress = await new HouseAddressName({
       status: 1, //0:inactive,1:active
       value: houseAddress,
       ownerType,
@@ -542,11 +639,12 @@ if(!this.res.user.isVerified){
       createdOn,
     });
 
-    if (!newHouseAddress) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating address, please try again"
-      );
+    if (!isValidMongoObject(newHouseAddress)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating address",
+      });
     }
 
     return newHouseAddress;
@@ -559,49 +657,65 @@ if(!this.res.user.isVerified){
   async __findPhonenumber(phone, type, isPrimary, isAdmin, ownerId, adminId) {
     const createdOn = new Date();
     if (!isValidPhonenumber(phone)) {
-      return responseBody.validationErrorWithData(
-        this.res,
-        "you need to provide a valid phonenumber",
-        "phone",
-        phone
-      );
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "you need to provide a valid phonenumber",
+      });
     }
     const formattedPhonenumber = formatPhonenumber(phone);
-    const query = {
+    console.log(formattedPhonenumber)
+    const existingPhoneneumber = await PhoneNumber.findOne({
       value: formattedPhonenumber[1] || "",
       countryCode: formattedPhonenumber[0] || "",
+      // ownerType: type,
       status: 1,
-    };
-    if (!isNaN(type)) {
-      query.ownerType = type;
-    }
-    if (!isNaN(isPrimary)) {
-      query.isPrimary = isPrimary;
-    }
-    if (!isNaN(isAdmin)) {
-      query.isAdmin = isAdmin;
-    }
-    if (isValidMongoObjectId(ownerId)) {
-      query.ownerId = ownerId;
-    }
-    if (isValidMongoObjectId(adminId)) {
-      query.adminId = adminId;
-    }
-    const existingPhoneneumber = await scheamaTools.findPhoneNumber(query);
+      [!isNaN(isPrimary) ? "isPrimary" : ""]: [
+        !isNaN(isPrimary) ? isPrimary : "",
+      ],
+      [!isNaN(isAdmin) ? "isAdmin" : ""]: [!isNaN(isAdmin) ? isAdmin : ""],
+      [!isNaN(ownerId) ? "ownerId" : ""]: [!isNaN(ownerId) ? ownerId : ""],
+      [!isNaN(adminId) ? "adminId" : ""]: [!isNaN(adminId) ? adminId : ""],
+      // isPrimary:!!isPrimary? isPrimary : "",
+      // isAdmin:!!isAdmin? isAdmin : "",
+    });
 
-    if (!existingPhoneneumber) {
-      return responseBody.notFoundResponse(this.res, "phonenumber not found");
+    if (!isValidMongoObject(existingPhoneneumber)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "phonenumber not found",
+      });
     }
 
     return existingPhoneneumber;
   }
-
   async __initiateUserLogin(estateId) {
+    if (!isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid estate id",
+      });
+    }
     const foundEstate = await this.__findEstate(estateId);
     if (!isValidMongoObject(foundEstate)) {
       return foundEstate;
     }
 
+    if (
+      !!this.res.user &&
+      isValidMongoObject(this.res.user) &&
+      !!this.res.user._id &&
+      isValidMongoObjectId(this.res.user._id) &&
+      stringIsEqual(this.res.user.status, 1)
+    ) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "You already have an active session",
+      });
+    }
     let ownerId = "";
 
     if (!!this.req.body.phone) {
@@ -623,11 +737,21 @@ if(!this.res.user.isVerified){
         return email;
       }
     } else {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Invalid input, try again with the correct details"
-      );
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid input",
+      });
     }
+
+    if (!isValidMongoObjectId(ownerId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid ownerId",
+      });
+    }
+
     const password = await this.__findPassword(
       this.req.body.password,
       0,
@@ -638,10 +762,11 @@ if(!this.res.user.isVerified){
       return password;
     }
     if (!stringIsEqual(password.ownerId, ownerId)) {
-      return responseBody.forbiddenErrorResponse(
-        this.res,
-        "invalid user details, try again with the correct details"
-      );
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "invalid user details",
+      });
     }
     const user = await this.__findUser(ownerId, 0);
 
@@ -652,29 +777,32 @@ if(!this.res.user.isVerified){
     if (!isValidMongoObject(userEstate)) {
       return userEstate;
     }
+
     if (!stringIsEqual(userEstate.ownerType, 0)) {
-      return responseBody.forbiddenErrorResponse(
-        this.res,
-        "sorry you are not a user"
-      );
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "sorry you are not a user",
+      });
     }
 
-    const userFoundUserFamily = await scheamaTools.findUserFamily({
+    const userFoundUserFamily = await UserFamily.findOne({
       status: 1,
       estateId,
       ownerId: user._id,
     });
-    if (!userFoundUserFamily) {
-      const userFoundUserHouseAddress = await scheamaTools.findHouseAddress({
+    if (!isValidMongoObject(userFoundUserFamily)) {
+      const userFoundUserHouseAddress = await HouseAddressName.findOne({
         status: 1,
         estateId,
         ownerId: user._id,
       });
-      if (!userFoundUserHouseAddress) {
-        return responseBody.notFoundResponse(
-          this.res,
-          "house Address not found"
-        );
+      if (!isValidMongoObject(userFoundUserHouseAddress)) {
+        this.res.statusCode = 404;
+        return this.res.json({
+          success: false,
+          message: "house Address not found",
+        });
       }
       const userFamily = await this.__createUserFamily(
         user._id,
@@ -692,13 +820,13 @@ if(!this.res.user.isVerified){
       await userFamily.save();
     }
 
-    const userFoundUserNotifications = await scheamaTools.findUserNotification({
+    const userFoundUserNotifications = await UserNotifications.findOne({
       status: 1,
       estateId,
       ownerId: user._id,
     });
 
-    if (!userFoundUserNotifications) {
+    if (!isValidMongoObject(userFoundUserNotifications)) {
       const userNotification = await this.__createUserNotification(
         user._id,
         estateId
@@ -714,11 +842,35 @@ if(!this.res.user.isVerified){
     return user;
   }
   async __initiateSecurityLogin(estateId) {
- 
+    // if (!isValidMongoObjectId(estateId)) {
+    // this.res.statusCode = 400
+    //   return this.res.json({
+    //     success: false,
+    //     message: "Invalid estate id",
+    //   });
+    // }
+    // const foundEstate = await this.__findEstate(estateId);
+    // if (!isValidMongoObject(foundEstate)) {
+    //   return foundEstate;
+    // }
+
+    if (
+      !!this.res.security &&
+      isValidMongoObject(this.res.security) &&
+      !!this.res.security._id &&
+      isValidMongoObjectId(this.res.security._id) &&
+      stringIsEqual(this.res.security.status, 1)
+    ) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "You already have an active session",
+      });
+    }
     let ownerId = "";
 
     if (!!this.req.body.phone) {
-      const phone = await this.__findPhonenumber(this.req.body.phone, 2, 1);
+      const phone = await this.__findPhonenumber(this.req.body.phone, 3, 1);
       if (!isValidMongoObject(phone)) {
         return phone;
       }
@@ -727,7 +879,7 @@ if(!this.res.user.isVerified){
         return phone;
       }
     } else if (!!this.req.body.email) {
-      const email = await this.__findEmail(this.req.body.email, 2, 1);
+      const email = await this.__findEmail(this.req.body.email, 3, 1);
       if (!isValidMongoObject(email)) {
         return email;
       }
@@ -736,18 +888,24 @@ if(!this.res.user.isVerified){
         return email;
       }
     } else {
-    return responseBody.forbiddenErrorResponse(this.res,"Provide a valid email or phonenumber")
- 
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Provide a valid email or phonenumber",
+      });
     }
 
-    if (!isValidMongoObjectId(ownerId)) { 
-      return responseBody.forbiddenErrorResponse(this.res,"Invalid ownerId")
- 
+    if (!isValidMongoObjectId(ownerId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid ownerId",
+      });
     }
 
     const password = await this.__findPassword(
       this.req.body.password,
-      2,
+      3,
       ownerId
     );
 
@@ -755,30 +913,78 @@ if(!this.res.user.isVerified){
       return password;
     }
     if (!stringIsEqual(password.ownerId, ownerId)) {
-      return responseBody.forbiddenErrorResponse(this.res,"Invalid security details") 
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "invalid security details",
+      });
     }
-    const security = await this.__findSecurity(ownerId, 2);
+    const security = await this.__findSecurity(ownerId, 3);
     if (!isValidMongoObject(security)) {
-
-      return responseBody.forbiddenErrorResponse(this.res,"Invalid security")
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "Invalid security",
+      });
     }
     // const userEstate = await this.__findUserEstate(ownerId, estateId);
     // if (!isValidMongoObject(userEstate)) {
     //   return userEstate;
     // }
-    const userEstate = await scheamaTools.findUserEstate({
+    const userEstate = await UserEstate.findOne({
       status: 1,
       ownerId,
-      ownerType: 2,
+      ownerType: 3,
     });
-    if (!userEstate) {
-      return responseBody.ErrorResponse(this.res,"Invalid security details")
+    if (!stringIsEqual(userEstate.ownerType, 3)) {
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "You are not registered under any estate",
+      });
     }
 
     return security;
   }
-
   async __initiateAdminLogin() {
+    // const estateId = this.req.query["estateId"] || "";
+    // if (!isValidMongoObjectId(estateId)) {
+    // this.res.statusCode = 400
+    //   return this.res.json({
+    //     success: false,
+    //     message: "Invalid estate id",
+    //   });
+    // }
+    // const foundEstate = await this.__findEstate(estateId);
+
+    // if (!isValidMongoObject(foundEstate)) {
+    //   return foundEstate;
+    // }
+    // if (!isValidMongoObjectId(estateId)) {
+    // this.res.statusCode = 400
+    //   return this.res.json({
+    //     success: false,
+    //     message: "Invalid estate id",
+    //   });
+    // }
+    // const foundEstate = await this.__findEstate(estateId);
+    // if (!isValidMongoObject(foundEstate)) {
+    //   return foundEstate;
+    // }
+
+    if (
+      !!this.res.admin &&
+      isValidMongoObject(this.res.admin) &&
+      !!this.res.admin._id &&
+      isValidMongoObjectId(this.res.admin._id) &&
+      stringIsEqual(this.res.admin.status, 1)
+    ) {
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "You already have an active session",
+      });
+    }
     let adminId = "";
     let ownerId = "";
 
@@ -787,7 +993,6 @@ if(!this.res.user.isVerified){
         this.req.body.phone,
         0,
         "-",
-        1,
         1
       );
       if (!isValidMongoObject(phone)) {
@@ -799,7 +1004,7 @@ if(!this.res.user.isVerified){
         return phone;
       }
     } else if (!!this.req.body.email) {
-      const email = await this.__findEmail(this.req.body.email, 0, "-", 1, 1);
+      const email = await this.__findEmail(this.req.body.email, 0, "-", 1);
       if (!isValidMongoObject(email)) {
         return email;
       }
@@ -809,24 +1014,40 @@ if(!this.res.user.isVerified){
         return email;
       }
     } else {
-      return responseBody.noMethodAllowedResponse(this.res, "Invalid input");
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid input",
+      });
     }
 
     if (!isValidMongoObjectId(adminId)) {
-      return responseBody.noMethodAllowedResponse(this.res, "Invalid adminId");
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid adminId",
+      });
     }
     if (!isValidMongoObjectId(ownerId)) {
-      return responseBody.noMethodAllowedResponse(this.res, "Invalid ownerId");
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid ownerId",
+      });
     }
 
-    const admin = await scheamaTools.findAdmin({
+    const admin = await Admin.findOne({
       status: "1",
       userId: ownerId,
       _id: adminId,
-    });
+    },adminScheama);
 
-    if (!admin) {
-      return responseBody.notFoundResponse(this.res, "Admin not found");
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Admin not found",
+      });
     }
     const password = await this.__findPassword(
       this.req.body.password,
@@ -838,23 +1059,71 @@ if(!this.res.user.isVerified){
       return password;
     }
     if (!stringIsEqual(password.ownerId, adminId)) {
-      return responseBody.unauthorizedResponse(
-        this.res,
-        "invalid user details"
-      );
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "invalid user details",
+      });
     }
-    if (!stringIsEqual(admin.isTopmost, 1)) {
-      const userEstate = await this.__findUserEstate(adminId, estateId);
-      if (!userEstate) {
-        return userEstate;
-      }
+    // const userEstate = await this.__findUserEstate(adminId, estateId);
+    // if (!isValidMongoObject(userEstate)) {
+    //   return userEstate;
+    // }
+    const existingUserEstate = await UserEstate.findOne({
+      status: 1,
+      ownerId: adminId,
+    });
+    if (!isValidMongoObject(existingUserEstate)) {
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "You are not registered under any estate",
+      });
+    }
+    if (!stringIsEqual(existingUserEstate.ownerType, 1)) {
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "You are not registered under this estate",
+      });
     }
     return admin;
   }
 
+  async __findEstate(estateId) {
+    const createdOn = new Date();
+    if (!isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid EstateId ",
+      });
+    }
+
+    const foundEstate = await RegisteredEstate.findOne({
+      status: 1,
+      _id: estateId,
+    });
+
+    if (!isValidMongoObject(foundEstate)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Estate not Found ",
+      });
+    }
+
+    return foundEstate;
+  }
   async __findEmail(email, type, isPrimary, isAdmin) {
     const createdOn = new Date();
-
+    if (!isEmail(email)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You didn't provide a valid email",
+      });
+    }
     const query = { status: 1, value: email };
     if (!isNaN(isAdmin)) {
       query.isAdmin = isAdmin;
@@ -866,118 +1135,146 @@ if(!this.res.user.isVerified){
       query.ownerType = type;
     }
 
-    const existingEmail = await scheamaTools.findEmail(query);
+    const existingEmail = await Email.findOne(
+      //   {
+      //   value: email,
+      //   // ownerType: type,
+      //   status: 1,
+      //   [!isNaN(isPrimary) ? "isPrimary" : ""]: [
+      //     !isNaN(isPrimary) ? isPrimary : "",
+      //   ],
+      //   [!isNaN(isAdmin) ? "isAdmin" : ""]: !isNaN(isAdmin) ? isAdmin : "",
+      // }
+      query
+    );
 
-    if (!existingEmail) {
-      return responseBody.ErrorResponse(this.res, "email not found");
+    if (!isValidMongoObject(existingEmail)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "email not found",
+      });
     }
 
     return existingEmail;
   }
-
   async __findUser(ownerId, type) {
     const createdOn = new Date();
-
-    const existingUser = await scheamaTools.findUser({
+    if (!isValidMongoObjectId(ownerId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "invalid user details",
+      });
+    }
+    const existingUser = await User.findOne({
       status: 1,
       _id: ownerId,
       // ownerType: type,
     });
-    if (!existingUser) {
-      return responseBody.notFoundResponse(this.res, "user not found");
+
+    if (!isValidMongoObject(existingUser)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "user not found",
+      });
     }
 
     return existingUser;
   }
-
   async __findUserEstate(userId, estateId) {
     const createdOn = new Date();
-    const existingUserEstate = await scheamaTools.findUserEstate({
+    if (!isValidMongoObjectId(userId) || !isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "invalid user details",
+      });
+    }
+    const existingUserEstate = await UserEstate.findOne({
       status: 1,
       ownerId: userId,
       estateId,
     });
 
-    if (!existingUserEstate) {
-      return responseBody.forbiddenErrorResponse(
-        this.res,
-        "user not registered under this estate"
-      );
+    if (!isValidMongoObject(existingUserEstate)) {
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "user not registered under this estate",
+      });
     }
 
     return existingUserEstate;
   }
-  async __findUserFamily(userId, estateId) {
-    const createdOn = new Date();
-    const existingUserFamily = await scheamaTools.findUserFamily({
-      status: 1,
-      ownerId: userId,
-      estateId,
-    });
-
-    if (!existingUserFamily) {
-      return responseBody.forbiddenErrorResponse(
-        this.res,
-        "user family not not found under this estate"
-      );
-    }
-
-    return existingUserEstate;
-  }
-
   async __findSecurity(ownerId, type) {
     const createdOn = new Date();
-    if (!isValidMongoObjectId(ownerId)) { 
-      return responseBody.ErrorResponse(
-        this.res,
-        "invalid Security details"
-      );
+    if (!isValidMongoObjectId(ownerId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "invalid Security details",
+      });
     }
-    const existingSecurity = await scheamaTools.findSecurity(
-      {
-        status: 1,
-        _id: ownerId,
-        ownerType: type,
-      } );
+    const existingSecurity = await Security.findOne({
+      status: 1,
+      _id: ownerId,
+      ownerType: type,
+    },{
+      _id:1,
+      status:1,
+      estateId:1,
+      "name.value":1,
+      "emails.value":1,
+      "phoneNumbers.value":1,
+      "houseAddress.value":1,
+      "phoneNumbers.countryCode":1,
+    });
 
-    if (!existingSecurity) { 
-      return responseBody.ErrorResponse(
-        this.res,
-        "invalid Security"
-      );
+    if (!isValidMongoObject(existingSecurity)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "invalid Security",
+      });
     }
 
     return existingSecurity;
   }
-
   async __findPassword(password, type, ownerId) {
     const createdOn = new Date();
-
-    const query = {
-      status: 1,
-      ownerId,
-    };
-    if (!isNaN(type)) {
-      query.ownerType = type;
+    if (!isValidPassword(password)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "You didn't provide a valid password",
+      });
     }
-    const existingPassword = await scheamaTools.findPassword(query);
 
-    if (!existingPassword) {
-      return responseBody.notFoundResponse(
-        this.res,
-        "password not found in the system, try again with the correct passeord"
-      );
+    const existingPassword = await Password.findOne({
+      status: 1, //0:deleted,1:active,
+      ownerId,
+      // ownerType: type,
+    });
+
+    if (!isValidMongoObject(existingPassword)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "password not found",
+      });
     }
     if (!isHashedString(password, existingPassword.hashedForm)) {
-      return responseBody.notFoundResponse(
-        this.res,
-        "incorrect password, try again with the correct passeord"
-      );
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: `The password provided is wrong`,
+      });
     }
 
     return existingPassword;
   }
-
   async __userRegister() {
     const createdOn = new Date();
     // type 0: user
@@ -985,13 +1282,14 @@ if(!this.res.user.isVerified){
     //      2:guest
 
     const estateId = this.req.query["estateId"] || "";
-    const houseOwnerType = this.req.body.houseOwnerType || "";
-    const apartmentType = this.req.body.apartmentType;
     const foundEstate = await this.__findEstate(estateId);
+
     if (!isValidMongoObject(foundEstate)) {
       return foundEstate;
     }
-    const name = await this.__createName(this.req.body.name, 0, 0);
+
+    const name = await this.__createName(this.req.body.name, 0);
+
     if (!isValidMongoObject(name)) {
       return name;
     }
@@ -1011,6 +1309,23 @@ if(!this.res.user.isVerified){
       return password;
     }
 
+    const houseOwnerType = this.req.body.houseOwnerType;
+    if (!isNaN(houseOwnerType) || houseOwnerType.length < 3) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid house owner type",
+      });
+    }
+    const apartmentType = this.req.body.apartmentType;
+    if (!apartmentType || apartmentType.length < 3) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid house apartment Type",
+      });
+    }
+
     const houseAddress = await this.__createHouseAddress(
       this.req.body.houseAddress,
       0,
@@ -1023,7 +1338,7 @@ if(!this.res.user.isVerified){
       return houseAddress;
     }
 
-    const newUser = await scheamaTools.createUser({
+    const newUser = await new User({
       status: 1,
       isAdmin: 0,
       isVerified: false,
@@ -1031,10 +1346,18 @@ if(!this.res.user.isVerified){
     });
 
     if (!isValidMongoObject(newUser)) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating user, please try again"
-      );
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating user",
+      });
+    }
+    if (!isValidMongoObjectId(newUser._id)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating user",
+      });
     }
 
     const userEstate = await this.__createUserEstate(newUser._id, estateId, 0);
@@ -1060,35 +1383,62 @@ if(!this.res.user.isVerified){
       return userFamily;
     }
 
-    const userNotification =
-      await this.__createNewUserEstateDefaultNotification(newUser, estateId);
+    const userEstateDefaultNotifications = await NotificationScheama.find({
+      status: 1,
+      estateId: estateId,
+      isDefault: 1,
+    });
+    let userDefaultNotifications = []
+    if (
+      isValidArrayOfMongoObject(userEstateDefaultNotifications) &&
+      userEstateDefaultNotifications.length > 0
+    ) {
+      userDefaultNotifications = userEstateDefaultNotifications
+      userEstateDefaultNotifications.map(async (notification, index) => {
+        const particularDefaultNotificationUserLinking =
+          await UserNotificationLinking.findOne({
+            status: 1,
+            contextId: notification._id,
+            estateId,
+            ownerId: newUser._id,
+          });
+
+        if (!isValidMongoObject(particularDefaultNotificationUserLinking)) {
+          try {
+            const newUserNotificationLinking =
+              await new UserNotificationLinking({
+                status: 1,
+                ownerId: newUser._id,
+                contextId: notification._id,
+                isRead: false,
+                kind: notification.kind, //0:notice,1: suggestion,2: forum
+                createdOn,
+                createdBy: newUser._id,
+              });
+
+            await newUserNotificationLinking.save();
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+    }
+
+    const userNotification = await this.__createUserNotification(
+      newUser._id,
+      estateId
+    );
 
     if (!isValidMongoObject(userNotification)) {
       return userNotification;
     }
-     
-    const newlyCreatedEmailVerify = await this.__verifyEmail(email, newUser);
- 
-    if (!isValidMongoObject(newlyCreatedEmailVerify)) {
-      return newlyCreatedEmailVerify;
-    }
- 
-    const createEmanagerUserWallet = await this.emanagerWallet.__createWallet(
-      newUser
-    );
- 
-    if (!isValidMongoObject(createEmanagerUserWallet)) {
-      return createEmanagerUserWallet;
-    }
- 
+    userNotification.notifications =  userDefaultNotifications
     // const newUserMode = await new UserMode({})
     name.ownerId = newUser._id;
     email.ownerId = newUser._id;
     phone.ownerId = newUser._id;
     houseAddress.ownerId = newUser._id;
     password.ownerId = newUser._id;
-
-    await newlyCreatedEmailVerify.save();
     await name.save();
     await email.save();
     await phone.save();
@@ -1104,13 +1454,71 @@ if(!this.res.user.isVerified){
     newUser.houseAddress = houseAddress;
 
     await newUser.save();
+    const formatuserphoneObject =
+      !!newUser && !!newUser.phoneNumbers && Array.isArray(newUser.phoneNumbers)
+        ? newUser.phoneNumbers.find((phoneNumber) =>
+            stringIsEqual(!!phoneNumber.isPrimary && phoneNumber.isPrimary, 1)
+          )
+        : {};
+    const formatuserphone =
+      `${formatuserphoneObject.countryCode}` + `${formatuserphoneObject.value}`;
+
+    const formatedUser = {
+      name: (newUser.name && newUser.name.value) || "",
+      apartmentType: newUser.apartmentType,
+      houseOwnerType: newUser.houseOwnerType,
+      email:
+        !!newUser && !!newUser.emails && Array.isArray(newUser.emails)
+          ? newUser.emails.find((email) =>
+              stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
+            )?.value
+          : "",
+      phoneNumber: formatuserphone,
+      houseAddress:
+        !!newUser &&
+        !!newUser.houseAddress &&
+        Array.isArray(newUser.houseAddress)
+          ? newUser.houseAddress.find((houseAddress) =>
+              stringIsEqual(estateId, houseAddress.estateId)
+            ).value
+          : "",
+      _id: newUser._id,
+    };
 
     const userUpdates = await this.__refreshUserUpdates(newUser, estateId);
 
     if (stringIsEqual(typeof userUpdates, "object")) {
       return userUpdates;
     }
-    const formatedUser = await this.__formatUserBody(newUser, estateId);
+
+    
+    const newlyCreatedEmailVerify = await new EmailVerify({
+      status: 1,
+      value: email.value,
+      ownerId: email._id,
+      userId: newUser._id,
+      ownerType: 0,
+      createdOn,
+      createdBy: newUser._id,
+      expiresOn: new Date(createdOn.getTime() + 900000),
+      token: crypto.randomBytes(16).toString('hex')
+    });
+    if (!isValidMongoObject(newlyCreatedEmailVerify)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Error while creating Email Verification link",
+      });
+    }
+
+    await newlyCreatedEmailVerify.save();
+    const createEmanagerUserWallet = await this.emanagerWallet.__createWallet(
+      newUser, 
+    );
+
+    if (!isValidMongoObject(createEmanagerUserWallet)) {
+      return createEmanagerUserWallet;
+    }
 
     return this.res.json({
       success: true,
@@ -1119,76 +1527,67 @@ if(!this.res.user.isVerified){
       token: generateToken(newUser, estateId),
     });
   }
-  // newUser
-  async __verifyEmail(email, newUser) {
-    const createdOn = new Date()
-    const newlyCreatedEmailVerify = await scheamaTools.createEmailVerify({
-      status: 1,
-      value: email.value,
-      ownerId: email._id,
-      userId: newUser._id,
-      ownerType: 0,
-      createdOn,
-      createdBy: newUser._id,
-      expiresOn: new Date(createdOn.getTime() + 86400000),
-      token: crypto.randomBytes(16).toString("hex"),
-    });
-    if (!newlyCreatedEmailVerify) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating Email Verification link"
-      );
-    }
-    return newlyCreatedEmailVerify
-  }
-  async __formatUserBody(user, estateId) {
-    const formatuserphoneObject = Array.isArray(user?.phoneNumbers)
-      ? user.phoneNumbers.find((phoneNumber) =>
-          stringIsEqual(phoneNumber?.isPrimary, 1)
-        )
-      : {};
-    const formatuserphone =
-      `${formatuserphoneObject?.countryCode}` +
-      `${formatuserphoneObject?.value}`;
-
-    const formatedUser = {
-      name: user?.name?.value || "",
-      apartmentType: user?.apartmentType,
-      houseOwnerType: user?.houseOwnerType,
-      email: Array.isArray(user?.emails)
-        ? user.emails.find((email) => stringIsEqual(email?.isPrimary, 1))?.value
-        : "",
-      phoneNumber: formatuserphone,
-      houseAddress: Array.isArray(user?.houseAddress)
-        ? user.houseAddress.find((houseAddress) =>
-            stringIsEqual(estateId, houseAddress.estateId)
-          )?.value
-        : "",
-      _id: user._id,
-    }; 
-    return formatedUser;
-  }
-  // newUser
   async __userLogin() {
     const createdOn = new Date();
+    if (isValidMongoObject(this.res.user)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: true,
+        message: "Already have an active session",
+      });
+    }
     const estateId = this.req.query["estateId"] || "";
+    if (!isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid estate id",
+      });
+    }
     const user = await this.__initiateUserLogin(estateId);
     if (!isValidMongoObject(user)) {
       return user;
     }
-    const formatedUser = await this.__formatUserBody(user, estateId);
+    const formatuserphoneObject =
+      !!user && !!user.phoneNumbers && Array.isArray(user.phoneNumbers)
+        ? user.phoneNumbers.find((phoneNumber) =>
+            stringIsEqual(!!phoneNumber.isPrimary && phoneNumber.isPrimary, 1)
+          )
+        : {};
+    const formatuserphone =
+      `${formatuserphoneObject.countryCode}` + `${formatuserphoneObject.value}`;
+    const formatedUser = {
+      name: (user.name && user.name.value) || "",
+      apartmentType: user.apartmentType,
+      houseOwnerType: user.houseOwnerType,
+      email:
+        !!user && !!user.emails && Array.isArray(user.emails)
+          ? user.emails.find((email) =>
+              stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
+            )?.value
+          : "",
+      phoneNumber: formatuserphone,
+      houseAddress:
+        !!user && !!user.houseAddress && Array.isArray(user.houseAddress)
+          ? user.houseAddress.find((houseAddress) =>
+              stringIsEqual(estateId, houseAddress.estateId)
+            )?.value || ""
+          : "", 
+      _id: user._id,
+    };
     const userUpdates = await this.__refreshUserUpdates(user, estateId);
 
     if (stringIsEqual(typeof userUpdates, "object")) {
       return userUpdates;
     }
 
-    const emanagerUserWalletlogin = await this.emanagerWallet.__walletLogin(
-      user
-    );
-    if (!isValidMongoObject(emanagerUserWalletlogin)) {
-      return emanagerUserWalletlogin;
-    }
+   
+      const emanagerUserWalletlogin = await this.emanagerWallet.__walletLogin(
+        user, 
+      );
+      if (!isValidMongoObject(emanagerUserWalletlogin)) {
+        return emanagerUserWalletlogin;
+      }
     return this.res.json({
       success: true,
       message: "User Login Successfully",
@@ -1197,151 +1596,136 @@ if(!this.res.user.isVerified){
     });
   }
 
-  async __createNewUserEstateDefaultNotification(newUser, estateId) {
-    const userEstateDefaultNotifications = await scheamaTools.findNotifications(
-      {
-        status: 1,
-        estateId: estateId,
-        isDefault: 1,
-      }
-    );
-    let userDefaultNotifications = [];
-    if (userEstateDefaultNotifications?.length > 0) {
-      userDefaultNotifications = userEstateDefaultNotifications;
-      userEstateDefaultNotifications.map(async (notification, index) => {
-        try {
-          const newUserNotificationLinking = await new UserNotificationLinking({
-            status: 1,
-            ownerId: newUser._id,
-            contextId: notification._id,
-            isRead: false,
-            kind: notification.kind, //0:notice,1: suggestion,2: forum
-            createdOn,
-            createdBy: newUser._id,
-          });
-
-          await newUserNotificationLinking.save();
-        } catch (error) {
-          console.log(error);
-        }
+  async __refreshUserUpdates(user, estateId) {
+    if (!isValidMongoObject(user)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...You are not Authorized",
       });
     }
-
-    const userNotification = await this.__createUserNotification(
-      newUser._id,
-      estateId
-    );
-
-    if (!userNotification) {
-      return userNotification
-    }
-    userNotification.notifications = userDefaultNotifications;
-    return userNotification;
-  }
-
-  async __updateUserNotification(user, estateId) {
     const { _id: userId } = user;
 
-    const currentUserNotificationLinking =
-      await scheamaTools.findUserNotificationLinkings({
-        status: "1",
-        ownerId: userId,
-        estateId,
+    if (!isValidMongoObjectId(userId)) {
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...Invalid User",
       });
-
-    if (!currentUserNotificationLinking) {
-      return;
     }
+
+    if (!isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...Invalid Estate",
+      });
+    }
+
     const currentUserNotificationLinkingCount =
-      await scheamaTools.userNotificationLinkingCount({
+      await UserNotificationLinking.countDocuments({
         status: "1",
         ownerId: userId,
         isRead: false,
         estateId,
       });
-    const userNotifications = [];
 
-    const pushUserNotifications = await Promise.all(
-      currentUserNotificationLinking.map(async (notificationLinking, index) => {
-        const contextId = notificationLinking.contextId;
-        if (isValidMongoObjectId(contextId)) {
-          const notification = await scheamaTools.findNotification({
-            status: 1,
-            _id: notificationLinking.contextId,
-          });
-          if (notification) {
-            userNotifications.push(notification);
-          }
-        }
-      })
-    );
-    try {
-      const updateUserNotifications = await scheamaTools.updateNotification(
+    if (isNaN(currentUserNotificationLinkingCount)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...Notification count process error",
+      });
+    }
+
+    this.res.notificationCount = currentUserNotificationLinkingCount;
+
+    if (currentUserNotificationLinkingCount > 0) {
+      const currentUserNotificationLinking = await UserNotificationLinking.find(
         {
-          status: 1,
+          status: "1",
           ownerId: userId,
           estateId,
-        },
-        {
-          $set: {
-            total: currentUserNotificationLinking.length,
-            unread: currentUserNotificationLinkingCount,
-            notifications: userNotifications,
-          },
         }
       );
-    } catch (err) {
-      console.log(err);
+
+      if (!isValidArrayOfMongoObject(currentUserNotificationLinking)) {
+        this.res.statusCode = 500;
+        return this.res.json({
+          success: false,
+          message: "Sorry!!.. error getting user notifications",
+        });
+      }
+
+      const userNotifications = [];
+
+      const pushUserNotifications = await Promise.all(
+        currentUserNotificationLinking.map(
+          async (notificationLinking, index) => {
+            const contextId = notificationLinking.contextId;
+            if (isValidMongoObjectId(contextId)) {
+              const notification = await NotificationScheama.findOne({
+                status: 1,
+                _id: notificationLinking.contextId,
+              });
+              if (isValidMongoObject(notification)) {
+                userNotifications.push(notification);
+              }
+            }
+          }
+        )
+      );
+      try {
+        const updateUserNotifications = await UserNotifications.updateOne(
+          {
+            status: 1,
+            ownerId: userId,
+            estateId,
+          },
+          {
+            $set: {
+              total: currentUserNotificationLinking.length,
+              unread: currentUserNotificationLinkingCount,
+              notifications: userNotifications,
+            },
+          }
+        );
+      } catch (err) {
+        console.log(err);
+      }
     }
-  }
 
-  async __refreshUserUpdates(user, estateId) {
-    const { _id: userId } = user;
-
-    const currentUserNotificationLinkingCount =
-      await scheamaTools.userNotificationLinkingCount({
+    const currentEstateFoodLinkingCount =
+      await FoodEstateLinking.countDocuments({
         status: "1",
-        ownerId: userId,
-        isRead: false,
         estateId,
       });
 
-    this.res.notificationCount = currentUserNotificationLinkingCount || 0;
-
-    try {
-      const updateNotification = await this.__updateUserNotification(
-        user,
-        estateId
-      );
-    } catch (error) {
-      console.log(error);
+    if (isNaN(currentEstateFoodLinkingCount)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...Food count process error",
+      });
     }
-    const currentEstateFoodLinkingCount = await scheamaTools.estateFoodCount({
-      status: "1",
-      estateId,
-    });
 
-    this.res.estateFoodsCount = currentEstateFoodLinkingCount || 0;
-    const currentFoodCount = await scheamaTools.foodCount({
-      status: "1",
-      estateId,
-    });
+    this.res.foodsCount = currentEstateFoodLinkingCount;
 
-    this.res.foodsCount = currentFoodCount || 0;
+    const currentEstateGoodLinkingCount =
+      await GoodEstateLinking.countDocuments({
+        status: "1",
+        estateId,
+      });
 
-    const currentEstateGoodLinkingCount = await scheamaTools.estateGoodCount({
-      status: "1",
-      estateId,
-    });
+    if (isNaN(currentEstateGoodLinkingCount)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...Goods count process error",
+      });
+    }
 
-    this.res.estateGoodsCount = currentEstateGoodLinkingCount || 0;
-
-    const currentGoodCount = await scheamaTools.goodCount({
-      status: "1",
-      estateId,
-    });
-
-    this.res.goodsCount = currentGoodCount || 0;
+    this.res.goodsCount = currentEstateGoodLinkingCount;
 
     const currentEstateServiceLinkingCount =
       await ServiceEstateLinking.countDocuments({
@@ -1360,32 +1744,36 @@ if(!this.res.user.isVerified){
     this.res.servicesCount = currentEstateServiceLinkingCount;
 
     const currentEstateBusinessLinkingCount =
-      await scheamaTools.estateBusinessCount({
+      await BusinessEstateLinking.countDocuments({
         status: "1",
         estateId,
       });
 
-    this.res.estateBusinessCount = currentEstateBusinessLinkingCount || 0;
+    if (isNaN(currentEstateBusinessLinkingCount)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...Business count process error",
+      });
+    }
 
-    const currentBusinessCount = await scheamaTools.businessCount({
-      status: "1",
-      estateId,
-    });
-
-    this.res.businessCount = currentBusinessCount || 0;
+    this.res.businessCount = currentEstateBusinessLinkingCount;
 
     const currentEstatePropertyLinkingCount =
-      await scheamaTools.estatePropertyCount({
+      await PropertyEstateLinking.countDocuments({
         status: "1",
         estateId,
       });
-    this.res.estatePropertyCount = currentEstatePropertyLinkingCount || 0;
 
-    const currentPropertyCount = await scheamaTools.propertyCount({
-      status: "1",
-      estateId,
-    });
-    this.res.propertyCount = currentPropertyCount || 0;
+    if (isNaN(currentEstatePropertyLinkingCount)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...Property count process error",
+      });
+    }
+
+    this.res.propertyCount = currentEstatePropertyLinkingCount;
 
     return true;
   }
@@ -1401,7 +1789,10 @@ if(!this.res.user.isVerified){
     //   });
     // }
     if (isValidMongoObject(this.res.security)) {
-     return responseBody.forbiddenErrorResponse(this.res,"Already have an active session") 
+      return this.res.json({
+        success: true,
+        message: "Already have an active session",
+      });
     }
     const security = await this.__initiateSecurityLogin(estateId);
     if (!isValidMongoObject(security)) {
@@ -1414,109 +1805,125 @@ if(!this.res.user.isVerified){
       token: generateTokenSecurity(security),
     });
   }
-
-  async __findAdmin(adminId) {
+  async __findAdmin(adminId, estateId) {
     const createdOn = new Date();
-    if (!isValidMongoObjectId(adminId)) {
+    if (!isValidMongoObjectId(adminId) || !isValidMongoObjectId(adminId)) {
       this.res.statusCode = 400;
-      return responseBody.noMethodAllowedResponse(
-        this.res,
-        "invalid admin details"
-      );
+      return this.res.json({
+        success: false,
+        message: "invalid admin details",
+      });
     }
 
-    const existingAdmin = await scheamaTools.findAdmin({
+    const existingAdmin = await Admin.findOne({
       status: 1,
       _id: adminId,
-    });
+      estateId,
+    },adminScheama);
 
-    if (!existingAdmin) {
+    if (!isValidMongoObject(existingAdmin)) {
       this.res.statusCode = 404;
-
-      return responseBody.notFoundResponse(this.res, "Admin not found!!!");
+      return this.res.json({
+        success: false,
+        message: "Admin not found!!!",
+      });
     }
 
     return existingAdmin;
   }
-
   async __findParticularEstateAdmin(adminId, estateId) {
     const createdOn = new Date();
     if (!isValidMongoObjectId(adminId) || !isValidMongoObjectId(estateId)) {
-      return responseBody.ErrorResponse(this.res, "invalid admin details");
+      this.res.statusCode = 406;
+      return this.res.json({
+        success: false,
+        message: "invalid admin details",
+      });
     }
 
-    const existingEstateAdmin = await scheamaTools.findUserEstate({
+    const existingEstateAdmin = await UserEstate.findOne({
       status: 1,
       // estateId,
       ownerId: adminId,
       // ownerType: 1,
     });
 
-    if (!existingEstateAdmin) {
-      return responseBody.notFoundResponse(
-        this.res,
-        "Admin not found under this estate!!!"
-      );
+    if (!isValidMongoObject(existingEstateAdmin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Admin not found under this estate!!!",
+      });
     }
 
     return existingEstateAdmin;
   }
-
   async __findAllParticularEstateAdmins(estateId) {
     const createdOn = new Date();
-    const existingAdmin = await scheamaTools.findAdmins({
+    if (!isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "invalid Estate Id",
+      });
+    }
+
+    const existingAdmin = await Admin.find({
       status: 1,
       estateId,
-    }); 
+    },adminScheama);
+
+    // if (!isValidMongoObject(existingAdmin)) {
+    // this.res.statusCode = 404
+    //   return this.res.json({
+    //     success: false,
+    //     message: "Admin not found!!!",
+    //   });
+    // }
     if (!Array.isArray(existingAdmin) || existingAdmin.length < 1) {
-      return responseBody.notFoundResponse(this.res, "Admin not found!!!");
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Admin not found!!!",
+      });
     }
     return existingAdmin;
   }
-
   async __checkExistingAdmin(ownerId, estateId) {
     const createdOn = new Date();
 
-    
-    const query = {
+    const existingAdmin = await Admin.findOne({
       status: 1,
-      userId: ownerId, 
-    }
-
-    if(isValidMongoObjectId(estateId)){
-      query.estateId = estateId
-    }
-
-    const existingAdmin = await scheamaTools.findAdmin(
-     query);
+      userId: ownerId,
+      estateId,
+    },adminScheama);
 
     return existingAdmin;
   }
 
   async __checkExistingAdminWithRole(estateId, role) {
     const createdOn = new Date();
-    if (role.length < 2) {
+    if (role.length<3) {
       return;
     }
 
-    const existingAdmin = await scheamaTools.findAdmin({
+    const existingAdmin = await Admin.findOne({
       status: 1,
+      estateId,
       role,
-      estateId
-    });
+    },adminScheama);
 
     return existingAdmin;
   }
-
   async __findTopmostAdmin() {
     const createdOn = new Date();
 
-    const existingTopmostAdmin = await scheamaTools.findAdmin({
+    const existingTopmostAdmin = await Admin.findOne({
       status: 1,
       isTopmost: 1,
-    });
+    },adminScheama);
 
-    if (!existingTopmostAdmin) {
+    if (!isValidMongoObject(existingTopmostAdmin)) {
       return;
     }
 
@@ -1559,7 +1966,6 @@ if(!this.res.user.isVerified){
       }
     );
   }
-
   async __deleteAdmin(ownerId, updatedBy, type, estateId) {
     const createdOn = new Date();
     if (
@@ -1618,6 +2024,8 @@ if(!this.res.user.isVerified){
     };
     // if the admin  isn't doesn't belong to another estate delete his details
     if (!isValidMongoObject(existingAdminEstate)) {
+     
+
       try {
         const passwordUpdatableSet = {
           status: 0,
@@ -1684,35 +2092,33 @@ if(!this.res.user.isVerified){
         console.log(err);
       }
       try {
-        const updateAdminOfficeAddress =
-          await AdminOfficeAddress.findOneAndUpdate(
-            {
-              adminId: ownerId,
-              status: 1,
-            },
-            {
-              $set: adminUpdatableSet,
-              $push: adminUpdatablePush,
-            },
-            { new: true }
-          );
+        const updateAdminOfficeAddress = await AdminOfficeAddress.findOneAndUpdate(
+          {
+            adminId: ownerId,
+            status: 1,
+          },
+          {
+            $set: adminUpdatableSet,
+            $push: adminUpdatablePush,
+          },
+          { new: true }
+        );
         adminDetails.officeAddress = updateAdminOfficeAddress;
       } catch (err) {
         console.log(err);
       }
       try {
-        const updateAdminOfficePhoneNumber =
-          await AdminOfficePhoneNumber.findOneAndUpdate(
-            {
-              adminId: ownerId,
-              status: 1,
-            },
-            {
-              $set: adminUpdatableSet,
-              $push: adminUpdatablePush,
-            },
-            { new: true }
-          );
+        const updateAdminOfficePhoneNumber = await AdminOfficePhoneNumber.findOneAndUpdate(
+          {
+            adminId: ownerId,
+            status: 1,
+          },
+          {
+            $set: adminUpdatableSet,
+            $push: adminUpdatablePush,
+          },
+          { new: true }
+        );
         adminDetails.officePhonenumbers = updateAdminOfficePhoneNumber;
       } catch (err) {
         console.log(err);
@@ -1734,18 +2140,17 @@ if(!this.res.user.isVerified){
         console.log(err);
       }
       try {
-        const updateAdminGuarantorsName =
-          await AdminGuarantorsName.findOneAndUpdate(
-            {
-              adminId: ownerId,
-              status: 1,
-            },
-            {
-              $set: adminUpdatableSet,
-              $push: adminUpdatablePush,
-            },
-            { new: true }
-          );
+        const updateAdminGuarantorsName = await AdminGuarantorsName.findOneAndUpdate(
+          {
+            adminId: ownerId,
+            status: 1,
+          },
+          {
+            $set: adminUpdatableSet,
+            $push: adminUpdatablePush,
+          },
+          { new: true }
+        );
         adminDetails.guarantorName = updateAdminGuarantorsName;
       } catch (err) {
         console.log(err);
@@ -1753,18 +2158,17 @@ if(!this.res.user.isVerified){
       // Email
 
       try {
-        const updateAdminGuarantorsEmail =
-          await AdminGuarantorsEmail.findOneAndUpdate(
-            {
-              adminId: ownerId,
-              status: 1,
-            },
-            {
-              $set: adminUpdatableSet,
-              $push: adminUpdatablePush,
-            },
-            { new: true }
-          );
+        const updateAdminGuarantorsEmail = await AdminGuarantorsEmail.findOneAndUpdate(
+          {
+            adminId: ownerId,
+            status: 1,
+          },
+          {
+            $set: adminUpdatableSet,
+            $push: adminUpdatablePush,
+          },
+          { new: true }
+        );
         adminDetails.guarantorEmail = updateAdminGuarantorsEmail;
       } catch (err) {
         console.log(err);
@@ -1772,18 +2176,17 @@ if(!this.res.user.isVerified){
       // Name
 
       try {
-        const updateAdminGuarantorsPhoneNumber =
-          await AdminGuarantorsPhoneNumber.findOneAndUpdate(
-            {
-              adminId: ownerId,
-              status: 1,
-            },
-            {
-              $set: adminUpdatableSet,
-              $push: adminUpdatablePush,
-            },
-            { new: true }
-          );
+        const updateAdminGuarantorsPhoneNumber = await AdminGuarantorsPhoneNumber.findOneAndUpdate(
+          {
+            adminId: ownerId,
+            status: 1,
+          },
+          {
+            $set: adminUpdatableSet,
+            $push: adminUpdatablePush,
+          },
+          { new: true }
+        );
         adminDetails.guarantorPhoneNumber = updateAdminGuarantorsPhoneNumber;
       } catch (err) {
         console.log(err);
@@ -1852,33 +2255,18 @@ if(!this.res.user.isVerified){
       ) {
         adminDetails.phoneNumbers = allAdminPhoneNumbers;
       }
+
+   
     }
-    let userId = ""
     try {
-      const updatableAdmin = await Admin.findOneAndUpdate(
+      const updatableAdmin = await Admin.updateOne(
         {
           _id: ownerId,
-          status: 1, 
+          status: 1,
+          ownerType: type,
         },
         {
           $set: adminDetails,
-          $push: adminUpdatablePush,
-        },
-        {new: true}
-      ); 
-    userId = updatableAdmin.userId
-    } catch (error) {
-      console.log(error);
-    }
-    console.log(userId)
-    try {
-      const updatableAdmin = await User.updateOne(
-        {
-          _id: userId,
-          status: 1, 
-        },
-        {
-          $set: {isAdmin:0,admin:[]},
           $push: adminUpdatablePush,
         }
       );
@@ -1886,9 +2274,8 @@ if(!this.res.user.isVerified){
       console.log(error);
     }
 
-    return true;
+    return true
   }
-
   async __deleteName(ownerId, updatedBy, type) {
     const createdOn = new Date();
     if (
@@ -1926,7 +2313,6 @@ if(!this.res.user.isVerified){
       }
     );
   }
-
   async __deleteEmail(ownerId, updatedBy, type) {
     const createdOn = new Date();
     if (
@@ -1968,42 +2354,66 @@ if(!this.res.user.isVerified){
   async __createUserEstate(userId, estateId, ownerType, createdBy) {
     const createdOn = new Date();
 
+    if (!isValidMongoObjectId(userId) || !isValidMongoObjectId(estateId)) {
+      return this.res.json({
+        success: true,
+        message: "invalid id",
+      });
+    }
+    if (isNaN(ownerType)) {
+      return this.res.json({
+        success: true,
+        message: "invalid owner type",
+      });
+    }
     const query = { status: 1, ownerId: userId, estateId, ownerType };
 
     if (isValidMongoObjectId(createdBy)) {
       query.createdBy = createdBy;
     }
-    const newUserEstate = await scheamaTools.createUserEstate(query);
+    const newUserEstate = await new UserEstate(query);
 
-    if (!newUserEstate) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating user estate, please try again"
-      );
+    if (!isValidMongoObject(newUserEstate)) {
+      return this.res.json({
+        success: true,
+        message: "error while creating user estate",
+      });
     }
 
     return newUserEstate;
   }
-
   async __createUserMode(userId, estateId, ownerType, createdBy) {
     const createdOn = new Date();
+
+    if (!isValidMongoObjectId(userId) || !isValidMongoObjectId(estateId)) {
+      return this.res.json({
+        success: true,
+        message: "invalid id",
+      });
+    }
+    if (isNaN(ownerType)) {
+      return this.res.json({
+        success: true,
+        message: "invalid owner type",
+      });
+    }
 
     const query = { status: 1, userId, estateId, mode: 0, ownerType };
 
     if (isValidMongoObjectId(createdBy)) {
       query.createdBy = createdBy;
     }
-    const newUserMode = await scheamaTools.createUserMode(query);
-    if (!newUserMode) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating user mode, please try again"
-      );
+    const newUserMode = await new UserMode(query);
+
+    if (!isValidMongoObject(newUserMode)) {
+      return this.res.json({
+        success: true,
+        message: "error while creating user mode",
+      });
     }
 
     return newUserMode;
   }
-
   async __createUserFamily(
     userId,
     estateId,
@@ -2014,7 +2424,35 @@ if(!this.res.user.isVerified){
   ) {
     const createdOn = new Date();
 
-    const newUserFamily = await scheamaTools.createUserFamily({
+    if (
+      !isValidMongoObjectId(userId) ||
+      !isValidMongoObjectId(estateId) ||
+      !isValidMongoObjectId(houseAddressId)
+    ) {
+      return this.res.json({
+        success: true,
+        message: "invalid id",
+      });
+    }
+    if (isNaN(ownerType)) {
+      return this.res.json({
+        success: true,
+        message: "invalid owner type",
+      });
+    }
+    // if (isNaN(isHouseOwner)) {
+    //   return this.res.json({
+    //     success: true,
+    //     message: "invalid house owner type",
+    //   });
+    // }
+    if (!relationship || relationship.length < 3) {
+      return this.res.json({
+        success: true,
+        message: "invalid ouse owner relationship ",
+      });
+    }
+    const newUserFamily = await new UserFamily({
       status: 1,
       ownerId: userId,
       estateId,
@@ -2024,11 +2462,12 @@ if(!this.res.user.isVerified){
       isHouseOwner, //0:not house owner,1:house owner
       relationship,
     });
-    if (!newUserFamily) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating user family, please try again"
-      );
+
+    if (!isValidMongoObject(newUserFamily)) {
+      return this.res.json({
+        success: true,
+        message: "error while creating user Family",
+      });
     }
 
     return newUserFamily;
@@ -2037,7 +2476,14 @@ if(!this.res.user.isVerified){
   async __createUserNotification(userId, estateId) {
     const createdOn = new Date();
 
-    const newUserNotification = await scheamaTools.createUserNotifications({
+    if (!isValidMongoObjectId(userId) || !isValidMongoObjectId(estateId)) {
+      return this.res.json({
+        success: true,
+        message: "invalid id",
+      });
+    }
+
+    const newUserNotification = await new UserNotifications({
       status: 1,
       ownerId: userId,
       estateId,
@@ -2046,11 +2492,11 @@ if(!this.res.user.isVerified){
       notifications: [],
       createdOn,
     });
-    if (!newUserNotification) {
-      return responseBody.ErrorResponse(
-        this.res,
-        "Error while creating user notification, please try again"
-      );
+    if (!isValidMongoObject(newUserNotification)) {
+      return this.res.json({
+        success: true,
+        message: "error while creating User Notifications",
+      });
     }
 
     return newUserNotification;
@@ -2099,7 +2545,6 @@ if(!this.res.user.isVerified){
       token: generateTokenAdmin(admin, estateId),
     });
   }
-
   async __userInfo() {
     const createdOn = new Date();
     this.res.send("<h1>User Info</h1>");

@@ -1,7 +1,11 @@
 const Controller = require("../controllers/controller");
-const express = require("express");  
-const portalConfig = require("../config/portalConfig.json"); 
-const router = express.Router(); 
+const express = require("express");
+const { isAuth, refreshUserUpdates, isPortalUser } = require("../utils");
+const { guestRoute } = require("./guest");
+const portalConfig = require("../config/portalConfig.json");
+const { profileRoute } = require("./userProfile");
+const router = express.Router();
+
 const upload = require("../helpers/multer");
 const path = require("path");
 const fs = require("fs");
@@ -9,7 +13,6 @@ const UserWalletTransaction = require("../model/emanager-user-wallet-transaction
 const  Bills = require("../model/bills");
 const  Name = require("../model/name");
 const BillPaymentHistory = require("../model/bill-payment-history");
-const {isPortalUser} = require("../utils/Middleware/Middleware");
 const { 
   isValidMongoObject,
   isValidMongoObjectId, 
@@ -39,7 +42,12 @@ function portalDefaultRoute() {
 
   router.route("/overview").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).portalOverview();
-  }); 
+  });
+
+  router.route("/estate").get((req, res, next) => {
+    return new Controller(req, res, next).findEstate();
+  });
+
   router.route("/estate").post((req, res, next) => {
     return new Controller(req, res, next).createEstate();
   });

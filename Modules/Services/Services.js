@@ -91,7 +91,7 @@ class Services extends Authentication {
     const formattedNewBusinessPhonenumber = formatPhonenumber(
       newBusinessPhonenumber
     );
-     if (
+    if (
       !isNaN(newBusinessCategory) &&
       !configDoc.BusinessType[newBusinessCategory]
     ) {
@@ -115,7 +115,7 @@ class Services extends Authentication {
       createdBy: userId,
       ownerId: userId,
       isAvailiable: 1,
-      category:configDoc.BusinessType[newBusinessCategory] || newBusinessCategory,
+      category: newBusinessCategory,
     });
     if (!isValidMongoObject(newlyCreatedBusiness)) {
       this.res.statusCode = 500;
@@ -858,29 +858,13 @@ class Services extends Authentication {
         message: "Sorry!...address not valid",
       });
     }
- 
 
-    if (
-      !isNaN(newServiceCategory) &&
-      !configDoc.serviceCategory[newServiceCategory]
-    ) {
-      this.res.statusCode = 400;
+    if (isNaN(newServiceCategory)) {
       return this.res.json({
         success: false,
-        message: "category not valid",
+        message: "Sorry!...category not valid",
       });
     }
-
-    if (isNaN(newServiceCategory) && newServiceCategory.length < 3) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "category not valid",
-      });
-    }
-
-
-
     const newlyCreatedService = await new Service({
       status: 1,
       createdOn,
@@ -888,7 +872,7 @@ class Services extends Authentication {
       ownerId: userId,
       isAvailiable: 1,
       type: 0, //0:service,1:company
-      category:configDoc.serviceCategory[newServiceCategory] || newServiceCategory,
+      category: newServiceCategory,
     });
 
     const newlyCreatedServiceEstateLinking = await new ServiceEstateLinking({

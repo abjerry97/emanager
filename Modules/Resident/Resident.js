@@ -21,8 +21,7 @@ const UserEstate = require("../../model/user-estate");
 const UserFamily = require("../../model/user-family");
 const UserMode = require("../../model/user-mode");
 const Votes = require("../../model/votes");
-const { generateToken } = require("../../utils/tokenGenerator");
-
+const { generateToken } = require("../../utils");
 const Authentication = require("../Authentication/auth");
 
 class Resident extends Authentication {
@@ -162,7 +161,97 @@ class Resident extends Authentication {
       message: "Mode gotten Succesfully",
       mode: foundUserMode,
     });
-  }  
+  }
+  async __findAllEstates() {
+    const createdOn = new Date();
+    // if
+    //   (isNaN(Number(this.req.query["limit"])))
+    //  {
+    //   return this.res.json({
+    //     success: false,
+    //     message: "Invalid Search params",
+    //   });
+    // }
+
+    const foundEstates = await RegisteredEstate.find({});
+    // if (!isValidMongoObject(foundEstates)) {
+    //   return this.res.json({
+    //     success: false,
+    //     message: "Estates not found",
+    //   });
+    // }
+    if (foundEstates.length < 1) {
+      return this.res.json({
+        success: false,
+        message: "No Estate not found",
+      });
+    }
+    return this.res.json({
+      success: true,
+      message: "Estates found",
+      estates: foundEstates.reduce((sum, estate) => {
+        sum.push({
+          name: estate.name,
+          location: estate.location,
+          _id: estate._id,
+        });
+        return sum;
+      }, []),
+    });
+  }
+  async __findEstate(name) {
+    const createdOn = new Date();
+    // validate name
+    const foundEstate = await RegisteredEstate.find({
+      status: 1,
+      $or: [
+        { name: { $regex: new RegExp(`${name}`, "i") } },
+        { location: { $regex: new RegExp(`${name}`, "i") } },
+      ],
+    });
+
+    // if (!isValidMongoObject(foundEstate)) {
+    //   return this.res.json({
+    //     success: false,
+    //     message: "Estate not found",
+    //   });
+    // }
+
+    return foundEstate;
+  }
+  async __findEstateWithQueryString() {
+    const createdOn = new Date();
+    if (!this.req.query["name"] || this.req.query["name"].length < 3) {
+      this.res.status(404);
+
+      return this.res.json({
+        success: false,
+        message: "Estate Not found",
+        foundEstate: [],
+      });
+    }
+
+    let foundEstate = await this.__findEstate(this.req.query["name"]);
+
+    // if (!isValidMongoObject(foundEstate)) {
+    //   return foundEstate;
+    // }
+    if (isValidArrayOfMongoObject(foundEstate) && foundEstate.length > 0) {
+      return this.res.json({
+        success: true,
+        message: "Estate found",
+        foundEstate,
+      });
+    } else {
+      foundEstate = [];
+      this.res.status(404);
+      return this.res.json({
+        success: false,
+        message: "Estate Not found",
+        foundEstate,
+      });
+    }
+  }
 
   async __editUserProfile() {
     const createdOn = new Date();

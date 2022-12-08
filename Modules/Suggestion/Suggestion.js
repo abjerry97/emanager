@@ -24,7 +24,7 @@ const Password = require("../../model/password");
 const PhoneNumber = require("../../model/phone-number");
 const User = require("../../model/user");
 const UserEstate = require("../../model/user-estate"); 
-
+const { generateToken } = require("../../utils");
 const Authentication = require("../Authentication/auth");
 
 class Suggestion extends Authentication {

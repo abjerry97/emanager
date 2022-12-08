@@ -11,12 +11,12 @@ const GuestName = require("../../model/guest-name");
 const GuestPhoneNumber = require("../../model/guest-phone-number");
 const GuestPlateNumber = require("../../model/guest-plate-number");
 
-const Guest = require("../../model/guest"); 
+const Guest = require("../../model/guest");
+const { generateToken, generateCode, handlePass } = require("../../utils");
 const GatePass = require("../../model/gate-pass");
 const HouseAddressName = require("../../model/house-address");
 const { formatPhonenumber } = require("../../helpers/tools");
 const GuestEmail = require("../../model/guest-email");
-const { generateCode } = require("../../utils/GatePasses/GatePasses");
 class Visitor {
   constructor(req, res, next) {
     this.req = req;

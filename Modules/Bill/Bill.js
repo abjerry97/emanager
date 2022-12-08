@@ -16,7 +16,8 @@ const BillPaymentHistory = require("../../model/bill-payment-history");
 const Bills = require("../../model/bills");
 const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
 const UserBillLinking = require("../../model/user-bill-linking");
-const UserEstate = require("../../model/user-estate"); 
+const UserEstate = require("../../model/user-estate");
+const { generateToken } = require("../../utils");
 const Authentication = require("../Authentication/auth");
 
 class Bill extends Authentication {

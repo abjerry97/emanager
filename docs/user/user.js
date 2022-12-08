@@ -17,7 +17,16 @@
  *       200:
  *         description: Returns current user details.
  */
- 
+
+/**
+ * @swagger
+ * /estate?name="":
+ *   get:
+ *     description: find particular estate with query string!
+ *     responses:
+ *       200:
+ *         description: Returns found estates.
+ */
 
 /**
  * @swagger
@@ -38,7 +47,7 @@
 
 /**
  * @swagger
- * /estates?page=1&name=""&pageSize=4:
+ * /estates:
  *   get:
  *     description: find all estates!
  *     responses:

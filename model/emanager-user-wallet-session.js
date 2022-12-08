@@ -23,8 +23,7 @@ const emanagerUserWalletSessionSchemaObject = {
       timing: defaultDate,
     },
   ],
-  createdBy: defaultString,
-  createdOn: defaultDate, // admin ID of the admin who created this entry
+  createdBy: defaultString, // admin ID of the admin who created this entry
 };
 
 

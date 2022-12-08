@@ -37,8 +37,6 @@ const AdminGuarantorsName = require("../../model/admin-guarantor-name");
 const AdminGuarantorsPhoneNumber = require("../../model/admin-guarantor-phonenumber");
 const { adminScheama } = require("../../helpers/projections");
 const AdminGuarantorsEmail = require("../../model/admin-guarantor-name-email");
-const scheamaTools = require("../../helpers/scheamaTools");
-const responseBody = require("../../helpers/responseBody");
 class Admin extends Authentication {
   constructor(req, res, next) {
     super();
@@ -483,9 +481,6 @@ class Admin extends Authentication {
       return foundUser;
     }
 
-    if(!foundUser.isVerified){
-      return responseBody.ErrorResponse(this.res, "Account not yet verified");
-    }
     const foundUserEstate = await UserEstate.findOne({
       status: 1,
       estateId,
@@ -2151,23 +2146,6 @@ class Admin extends Authentication {
       newlyUpdatedAdmin = {};
     }
 
-
-
-    try {
-      const updateExistingUser = await User.updateOne(
-        {
-          status: 1,
-          _id: foundSelectedAdminUserId, 
-          adminId: selectedAdminId,
-        },
-        {
-          $set: { admin: newlyUpdatedAdmin },
-        }
-      );
-    } catch (err) {
-      console.log(err);
-    }
-  
     return this.res.json({
       success: true,
       message: "Admin updated Successfully",
@@ -2751,9 +2729,10 @@ class Admin extends Authentication {
         message: "invalid admin",
       });
     }
-    
-    const allUsers =await scheamaTools.findUsers({status: 1}) 
-    
+
+    const allUsers = await User.find({
+      status: 1,
+    });
     if (!isValidArrayOfMongoObject(allUsers)) {
       return this.res.json({
         success: false,
@@ -3148,7 +3127,7 @@ class Admin extends Authentication {
         businessUpdatableSet.status = 0;
         businessUpdatableSet.isAvailiable = 0;
 
-        const updateParticularHouse = await Business.findOneAndUpdate(
+        const updateParticularHouse = await Business.updateOne(
           {
             status: 1,
             _id: businessToUpdate,
@@ -3423,7 +3402,7 @@ class Admin extends Authentication {
         serviceUpdatableSet.status = 0;
         serviceUpdatableSet.isAvailiable = 0;
 
-        const updateParticularHouse = await Service.findOneAndUpdate(
+        const updateParticularHouse = await Service.updateOne(
           {
             status: 1,
             _id: serviceToUpdate,

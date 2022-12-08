@@ -20,8 +20,7 @@ const serviceSchemaObject = {
   status: defaultString, //0:deleted,1:active
   ownerId: defaultString,
   adType:defaultString,
-  category:defaultString,
-  image: [{ _id: defaultString, ...ServiceImage.getSchemaObject() }],
+  image: { _id: defaultString, ...ServiceImage.getSchemaObject() },
   details: { _id: defaultString, ...ServiceDetails.getSchemaObject() },
   name: { _id: defaultString, ...Name.getSchemaObject() },
   emails: [{ _id: defaultString, ...Email.getSchemaObject() }],
