@@ -100,7 +100,7 @@ if(shouldverifyEmailRun){
               } else if (!unverifiedEmail.isMailSent) {
                 const result = await sendEmailNovuNotification(
                   unverifiedEmail.value,
-                  `http://localhost:1200/user/account/verify/${unverifiedEmail.token}`,
+                  `http://${process.env.BASE_URL}/user/account/verify/${unverifiedEmail.token}`,
                   "verify-email"
                 );
   
