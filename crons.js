@@ -100,7 +100,7 @@ if(shouldverifyEmailRun){
               } else if (!unverifiedEmail.isMailSent) {
                 const result = await sendEmailNovuNotification(
                   unverifiedEmail.value,
-                  `http://${process.env.BASE_URL}/user/account/verify/${unverifiedEmail.token}`,
+                  `https://emanager-cyan.vercel.app/user/account/verify/${unverifiedEmail.token}`,
                   "verify-email"
                 );
   
