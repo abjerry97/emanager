@@ -18,13 +18,13 @@ router.use(async (req, res, next) => {
     doResearchFromHost(req.headers.host, resolve);
   });
  const  { success, message, lastSubdomain } =response
-
+console.log(response)
     // adminRoute(true)(req, res, next);
     // portalDefaultRoute()(req, res, next);
         // securityRoute()(req, res, next);
  
  if (!stringIsEqual(typeof lastSubdomain, "string")) {
-    defaultRoute()(req, res, next);
+    defaultRoute(response)(req, res, next);
   } else if (stringIsEqual(lastSubdomain, "admin")) {
     adminRoute(true)(req, res, next);
   }  else if (stringIsEqual(lastSubdomain, "security")) {
