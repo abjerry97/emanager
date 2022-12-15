@@ -24,7 +24,7 @@ console.log(response)
         // securityRoute()(req, res, next);
  
  if (!stringIsEqual(typeof lastSubdomain, "string")) {
-    defaultRoute(response)(req, res, next);
+    defaultRoute(req.headers)(req, res, next);
   } else if (stringIsEqual(lastSubdomain, "admin")) {
     adminRoute(true)(req, res, next);
   }  else if (stringIsEqual(lastSubdomain, "security")) {
