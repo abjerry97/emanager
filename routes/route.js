@@ -23,20 +23,20 @@ router.use(async (req, res, next) => {
     // portalDefaultRoute()(req, res, next);
         // securityRoute()(req, res, next);
  
-if(!isProduction){
+if(isProduction){
 
 
 
   if (!stringIsEqual(req.headers.host.split(".")[0], "emanager")) {
-    defaultRoute(req.headers.host.split(".")[0])(req, res, next);
+    defaultRoute(req.headers.host.split("."))(req, res, next);
   } else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-admin")) {
-    adminRoute(req.headers.host.split(".")[0])(req, res, next);
+    adminRoute(req.headers.host.split("."))(req, res, next);
   }  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-security")) {
     securityRoute()(req, res, next);
   }  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-webportal")) {
     portalDefaultRoute()(req, res, next);
   } else {
-    defaultRoute(req.headers.host.split(".")[0])(req, res, next);
+    defaultRoute(req.headers.host.split("."))(req, res, next);
   
   }
 
