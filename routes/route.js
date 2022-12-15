@@ -28,7 +28,7 @@ if(!isProduction){
 
 
   if (!stringIsEqual(req.headers.host.split(".")[0], "emanager")) {
-    defaultRoute()(req, res, next);
+    defaultRoute(req.headers.host.split(".")[0])(req, res, next);
   } else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-admin")) {
     adminRoute(req.headers.host.split(".")[0])(req, res, next);
   }  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-security")) {
@@ -36,7 +36,7 @@ if(!isProduction){
   }  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-webportal")) {
     portalDefaultRoute()(req, res, next);
   } else {
-    defaultRoute(false)(req, res, next);
+    defaultRoute(req.headers.host.split(".")[0])(req, res, next);
   
   }
 
