@@ -25,35 +25,49 @@ router.use(async (req, res, next) => {
  
 if(!isProduction){
 
- if (!stringIsEqual(typeof lastSubdomain, "string")) {
+
+
+  if (!stringIsEqual(req.headers.host.split(".")[0], "emanager")) {
     defaultRoute()(req, res, next);
-  } else if (stringIsEqual(lastSubdomain, "admin")) {
-    adminRoute(true)(req, res, next);
-  }  else if (stringIsEqual(lastSubdomain, "security")) {
+  } else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-admin")) {
+    adminRoute(req.headers.host.split(".")[0])(req, res, next);
+  }  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-security")) {
     securityRoute()(req, res, next);
-  }  else if (stringIsEqual(lastSubdomain, "portal")) {
+  }  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-webportal")) {
     portalDefaultRoute()(req, res, next);
   } else {
     defaultRoute(false)(req, res, next);
   
-  }}
+  }
+
+
+
+
+
+
+
+
+}
   
 
 
 else{
    
- if (!stringIsEqual(req.headers.host.split(".")[0], "emanager")) {
+
+
+ if (!stringIsEqual(typeof lastSubdomain, "string")) {
   defaultRoute()(req, res, next);
-} else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-admin")) {
+} else if (stringIsEqual(lastSubdomain, "admin")) {
   adminRoute(true)(req, res, next);
-}  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-security")) {
+}  else if (stringIsEqual(lastSubdomain, "security")) {
   securityRoute()(req, res, next);
-}  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-webportal")) {
+}  else if (stringIsEqual(lastSubdomain, "portal")) {
   portalDefaultRoute()(req, res, next);
 } else {
   defaultRoute(false)(req, res, next);
 
 }
+
 }
 });
 
