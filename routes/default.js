@@ -10,7 +10,7 @@ const upload = require("../helpers/multer");
 const path = require("path");
 const fs = require("fs");
 
-function defaultRoute(ree) {
+function defaultRoute() {
  
 
   router
@@ -19,7 +19,7 @@ function defaultRoute(ree) {
       next();
     })
     .get((req, res, next) => {
-      res.send(ree);
+      res.send("<h1> Welcome User to Estate Management </h1>");
     });
    
   router.route("/info").get(isAuth, travelMode, (req, res, next) => {

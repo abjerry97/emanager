@@ -41,7 +41,7 @@ const { guestRoute } = require("./guest");
 // };
 // const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
-function adminRoute(reeee) {
+function adminRoute() {
   const router = express.Router();
 
   // router.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
@@ -53,7 +53,7 @@ function adminRoute(reeee) {
         next();
       })
       .get((req, res, next) => {
-        res.send(reeee);
+        res.send("<h1> Welcome to Admin App  </h1>");
       });
 
     router.route("/info").get(isAdmin, travelMode, (req, res, next) => {
