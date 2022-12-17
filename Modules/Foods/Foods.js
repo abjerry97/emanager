@@ -48,18 +48,18 @@ class Foods {
         message: "sorry!...Invalid user",
       });
     }
-    if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid estate id",
-      });
-    }
+    // if (!isValidMongoObjectId(estateId)) {
+    //   this.res.statusCode = 400
+    //   return this.res.json({
+    //     success: false,
+    //     message: "sorry!...Invalid estate id",
+    //   });
+    // }
 
     const foodName = this.req.body.name || "";
     const foodDescription = this.req.body.description || "";
     const foodPrice = this.req.body.price || "";
-    const file = this.req.file;
+    const files = this.req.files;
 
     if (foodName.length < 3) {
       this.res.statusCode = 400
@@ -158,34 +158,18 @@ class Foods {
         message: "Sorry! error while creating Food Estate Linking",
       });
     }
-
-    if (!file || !file.filename) {
-      this.res.statusCode = 400
+ 
+    if (!files || !Array.isArray(files) || files.length < 1) {
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!... Invalid Image file",
       });
     }
-    const fileName = "image" + Date.now();
-    let newlyCreatedFoodImage = {};
-    try {
-      const result = await cloudinary.uploader.upload(file.path, {
-        //   resource_type: "image",
-        public_id: `foods/uploads/images/${fileName}`,
-        overwrite: true,
-      });
 
-      newlyCreatedFoodImage = await new FoodImage({
-        status: 1,
-        url: result.secure_url,
-        createdOn,
-        createdBy: userId,
-      });
-    } catch (error) {
-      console.log(error);
-    }
+    let newlyCreatedFoodImages = await this.__createFoodImage(userId,files)
 
-    if (!isValidMongoObject(newlyCreatedFoodImage)) {
+    if (!isValidArrayOfMongoObject(newlyCreatedFoodImages)) {
       this.res.statusCode = 400
       return this.res.json({
         success: false,
@@ -261,21 +245,32 @@ const unformattedOwnerPhone =
     newlyCreatedFoodName.foodId = newlyCreatedFood._id;
     newlyCreatedFoodDescription.foodId = newlyCreatedFood._id;
     newlyCreatedFoodPrice.foodId = newlyCreatedFood._id;
-    newlyCreatedFoodImage.foodId = newlyCreatedFood._id;
     newlyCreatedFoodOwnerDetails.foodId = newlyCreatedFood._id;
     newlyCreatedFoodEstateLinking.foodId = newlyCreatedFood._id;
     newlyCreatedFoodRating.foodId = newlyCreatedFood._id;
-
+    try {
+      const pushnewlyCreatedFoodImages = await Promise.all(
+        newlyCreatedFoodImages.map(async (newlyCreatedFoodImage) => {
+          try {
+            newlyCreatedFoodImage.foodId = newlyCreatedFood._id;
+            await newlyCreatedFoodImage.save();
+          } catch (err) {
+            console.log(err);
+          }
+        })
+      );
+    } catch (error) {
+      console.log(error);
+    }
     newlyCreatedFood.name = newlyCreatedFoodName.value;
     newlyCreatedFood.description = newlyCreatedFoodDescription;
     newlyCreatedFood.price = newlyCreatedFoodPrice;
-    newlyCreatedFood.image = newlyCreatedFoodImage;
+    newlyCreatedFood.image = newlyCreatedFoodImages;
     newlyCreatedFood.rating = newlyCreatedFoodRating;
 
     await newlyCreatedFoodName.save();
     await newlyCreatedFoodDescription.save();
-    await newlyCreatedFoodPrice.save();
-    await newlyCreatedFoodImage.save();
+    await newlyCreatedFoodPrice.save(); 
     await newlyCreatedFood.save();
     await newlyCreatedFoodOwnerDetails.save();
     await newlyCreatedFoodEstateLinking.save();
@@ -287,7 +282,37 @@ const unformattedOwnerPhone =
       food: newlyCreatedFood,
     });
   }
+  async __createFoodImage(userId,files){
+    const createdOn = new Date()
+ 
 
+
+    let newlyCreatedFoodAdImages =[]
+    const pushImages = await Promise.all(
+      (files || []).map(async (image, index) => {
+        const fileName = "image" + Date.now() + index;
+        try {
+          const result = await cloudinary.uploader.upload(image.path, {
+            //   resource_type: "image",
+            public_id: `foods/uploads/images/${fileName}`,
+            overwrite: true,
+          });
+  
+          newlyCreatedFoodAdImages[index] = await new FoodImage({
+            status: 1,
+            url: result.secure_url,
+            createdOn,  
+            createdBy: userId,
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      })
+    );
+  
+    return newlyCreatedFoodAdImages
+  }
+  
   async __rateFood() {
     const createdOn = new Date();
     // validate request
@@ -1008,7 +1033,7 @@ const unformattedOwnerPhone =
             }
 
             try {
-              const updateParticularFoodImage = await FoodImage.findOneAndUpdate(
+              const updateParticularFoodImage = await FoodImage.updateMany(
                 {
                   status: 1,
                   foodId: contextId,
@@ -1024,11 +1049,10 @@ const unformattedOwnerPhone =
                       },
                     ],
                   },
-                },
-                { new: true }
+                } 
               );
               
-              foodUpdatableSet.image = updateParticularFoodImage
+              // foodUpdatableSet.image = updateParticularFoodImage
             } catch (error) {
               console.log(error);
             }
@@ -1244,116 +1268,7 @@ const unformattedOwnerPhone =
     });
   }
 
-
-
-
-
-
-
- // to remove **********************************************************************
-
- async __specialUpdateonFood() {
-  const createdOn = new Date();
-  // validate request
-
-  const user = this.res.user || {};
-  const userId = user._id;
-  const { _id: estateId } = this.res.estate || "";
-  if (!isValidMongoObjectId(userId)) {
-    return this.res.json({
-      success: false,
-      message: "sorry!...Invalid user",
-    });
-  }
-  if (!isValidMongoObjectId(estateId)) {
-    return this.res.json({
-      success: false,
-      message: "sorry!...Invalid estate id",
-    });
-  } 
-
-  // validate name
-  const foundFoods = await Food.find({ 
-  });
-
-
-  
-  // Food
-  const pushUserPasses = await Promise.all(
-    (foundFoods || []).map(async(foundFood, index) => {
-        const contextId = foundFood.createdBy;
-        const updateToMake = {
-          ownerName:"",
-          ownerEmail:"",
-          ownerPhone:"",
-        }
-
-        if (isValidMongoObjectId(contextId)) {
-            try {
-
-                const particulatFoodOwner = await User.findOne({ 
-                    _id: contextId,
-                } )
-
-                if (isValidMongoObject(particulatFoodOwner)) {
-                  const ownerEmail = 
-                  user.emails && Array.isArray(user.emails)
-                    ? user.emails.find((email) =>
-                        stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
-                      )?.value
-                    : "";
-               
-              const unformattedOwnerPhone = 
-                  user.phoneNumbers && Array.isArray(user.phoneNumbers)
-                    ? user.phoneNumbers.find((phoneNumbers) =>
-                        stringIsEqual(
-                          !!phoneNumbers.isPrimary && phoneNumbers.isPrimary,
-                          1
-                        )
-                      )
-                    : {};
-              
-                    const ownerPhone = `${unformattedOwnerPhone?.countryCode}` + `${unformattedOwnerPhone?.value}`
-                  updateToMake.ownerName= user?.name?.value
-                  updateToMake.ownerEmail= ownerEmail
-                  updateToMake.ownerPhone= ownerPhone
-                  updateToMake.adType = "foods"
-
-                  const updatableFood = await Food.updateOne({_id:foundFood._id},
-                    {
-                      $set: updateToMake
-                     , 
-                    $push: {
-                      updates: [
-                        {
-                          by: userId, // admin ID of the user who made this update
-                          action:"update Owner Details", //0:delete,1:added a new category,2:removed a category,3:published,4:unpublished,5:added new option group,6:removed an option group,7:updated an option group
-                          timing: createdOn,
-                        },
-                      ],
-                    },}
-                    
-                    
-                    ) 
-  
-
-                }
-
-
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    })
-);
-  return this.res.json({
-    success: true,
-    message: "Foods found",
-    Foods: foundFoods,
-  });
-}
-
-
+ 
 
  
 

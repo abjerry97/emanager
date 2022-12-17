@@ -16,6 +16,14 @@ const isValidFullName = (name) => {
     return true;
   }
 };
+const isValidHouseAddress = (address) => {
+   
+  if (address.length < 6) {
+    return false;
+  } else {
+    return true;
+  }
+};
 
 const stringIsEqual = (firstString, secondString) => {
   return (
@@ -71,7 +79,7 @@ const  isValidPhonenumber = (phone) =>{
   }
 }
 const  isValidPassword = (password) =>{
-  if(!isNaN(password) && password.length == 4){ 
+  if(!!password && password.length <15 &&  password.length >3){ 
     return true
   } 
   return false
@@ -98,5 +106,6 @@ module.exports = {
   isValidFullName,
   isValidPhonenumber,
   isValidArrayOfMongoObject,
-  isValidPassword
+  isValidPassword,
+  isValidHouseAddress
 };

@@ -13,8 +13,7 @@ const BillAmount = require("../../model/bill-amount");
 const BillDate = require("../../model/bill-date");
 const Bills = require("../../model/bills");
 const UserBillLinking = require("../../model/user-bill-linking");
-const EmergencyScheama = require("../../model/emergency");
-const { generateToken } = require("../../utils");
+const EmergencyScheama = require("../../model/emergency"); 
 const Authentication = require("../Authentication/auth");
 
 class Emergency extends Authentication {

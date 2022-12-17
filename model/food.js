@@ -26,7 +26,7 @@ const foodSchemaObject = {
   adType:defaultAdType,
   ads:{ _id: defaultString, ...FoodAd.getSchemaObject() },
   price: { _id: defaultString, ...FoodPrice.getSchemaObject() },
-  image: { _id: defaultString, ...FoodImage.getSchemaObject() },
+  image: [{ _id: defaultString, ...FoodImage.getSchemaObject() }],
   rating: { _id: defaultString, ...FoodRating.getSchemaObject() },
   description: {
     _id: defaultString,

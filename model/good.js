@@ -25,7 +25,7 @@ const goodSchemaObject = {
   ownerEmail:defaultString,
   price: { _id: defaultString, ...GoodPrice.getSchemaObject() },
   ads:{ _id: defaultString, ...GoodAd.getSchemaObject() },
-  image: { _id: defaultString, ...GoodImage.getSchemaObject() },
+  image: [{ _id: defaultString, ...GoodImage.getSchemaObject() }],
   rating: { _id: defaultString, ...GoodRating.getSchemaObject() },
   description: {
     _id: defaultString,

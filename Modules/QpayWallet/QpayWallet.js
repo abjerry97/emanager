@@ -4,11 +4,8 @@ const {
   isValidPhonenumber,
   isValidPassword,
   isValidArrayOfMongoObject,
-} = require("../../helpers/validators");
-// const UserWallet = require("../../model/user-wallet");
-// const UserWalletBalance = require("../../model/user-wallet-balance"); 
-// const UserWalletSessionToken = require("../../model/user-wallet-session-token"); 
-const { CreateQpayCustomerObject } = require("../../utils");
+} = require("../../helpers/validators"); 
+const { CreateQpayCustomerObject } = require("../../utils/WalletTools/WalletTools");
 
 class QpayWallet {
   constructor(req, res) {

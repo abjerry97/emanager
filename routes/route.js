@@ -36,7 +36,7 @@ if(isProduction){
   }  else if (stringIsEqual(req.headers.host.split(".")[0], "emanager-webportal")) {
     portalDefaultRoute()(req, res, next);
   } else {
-    securityRoute(req.headers.host.split(".")[0])(req, res, next);
+    defaultRoute(req.headers.host.split(".")[0])(req, res, next);
   
   }
 

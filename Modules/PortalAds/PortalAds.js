@@ -39,8 +39,7 @@ class PortalAds {
         message: "sorry!...Invalid user",
       });
     }
-    const {
-      // adDetails = "",
+    const { 
       adDescription = "",
       location = "",
       title = "",
@@ -60,14 +59,7 @@ class PortalAds {
         message: "oops!...invalid ad Description",
       });
     }
-
-    // if (adDetails.length < 3) {
-    //   this.res.statusCode = 400;
-    //   return this.res.json({
-    //     success: false,
-    //     message: "oops!...invalid ad Details",
-    //   });
-    // }
+ 
 
     if (location.length < 3) {
       this.res.statusCode = 400;
@@ -91,29 +83,6 @@ class PortalAds {
         message: "oops!...invalid title",
       });
     }
-    // if (category.length < 3 || !propertyConfig[category.trim()]) {
-    //   this.res.statusCode = 400;
-    //   return this.res.json({
-    //     success: false,
-    //     message: "oops!...invalid category",
-    //   });
-    // }
-
-    // if (isNaN(bedroom) || bedroom < 0) {
-    //   this.res.statusCode = 400;
-    //   return this.res.json({
-    //     success: false,
-    //     message: "oops!...invalid number of bedrooms specified",
-    //   });
-    // }
-
-    // if (isNaN(bathroom) || bathroom < 0) {
-    //   this.res.statusCode = 400;
-    //   return this.res.json({
-    //     success: false,
-    //     message: "oops!...invalid number of bathrooms specified",
-    //   });
-    // }
 
     if (furnishedStatus.length < 3) {
       this.res.statusCode = 400;
@@ -131,42 +100,14 @@ class PortalAds {
       });
     }
 
-    if (!files || !Array.isArray(files) || files.length <1 ) {
-        
+    if (!files || !Array.isArray(files) || files.length < 1) {
       this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!... Invalid Image file",
       });
-    }  
-    // files.map((file)=>{ 
-    //   if (!file || !file.filename) { 
-    //     this.res.statusCode = 400;
-    //     return this.res.json({
-    //       success: false,
-    //       message: "Sorry!... Invalid Image file",
-    //     });
-    //   }
-    // })
- 
+    }
 
-
-
-  
-    // const newlyCreatedAddDetails = await new AdDetails({
-    //   status: 1,
-    //   value: adDetails,
-    //   createdOn,
-    //   createdBy: userId,
-    // });
-
-    // if (!isValidMongoObject(newlyCreatedAddDetails)) {
-    //   this.res.statusCode = 500;
-    //   return this.res.json({
-    //     success: false,
-    //     message: "Sorry! error while creating Ad Details",
-    //   });
-    // }
     const newlyCreatedAdDescription = await new AdDescription({
       status: 1,
       value: adDescription,
@@ -221,40 +162,7 @@ class PortalAds {
       });
     }
 
-
-    
-    let newlyCreatedPostAdImages = []; 
-
-    const pushImages = await Promise.all( 
-
-    (files||[]).map(async(image,index)=> {
-
- 
-      console.log("newlyCreatedImage",image)
-
-      const fileName = "image" + Date.now()+ index;
-      try {
-        const result = await cloudinary.uploader.upload(image.path, {
-          //   resource_type: "image",
-          public_id: `property/ads/uploads/images/${fileName}`,
-          overwrite: true,
-        });
-  
-        newlyCreatedPostAdImages[index]  = await new AdImage({
-          status: 1,
-          url: result.secure_url,
-          createdOn,
-          ownerId : newlyCreatedPropertyAd._id,
-          ownerType: "property",
-          createdBy: userId,
-        });
-      } catch (error) {
-        console.log(error);
-      } 
- 
-    })
-    )
- 
+    let newlyCreatedPostAdImages = await this.__createAdImage(newlyCreatedPropertyAd._id,userId,files);
 
 
     if (!isValidArrayOfMongoObject(newlyCreatedPostAdImages)) {
@@ -264,8 +172,6 @@ class PortalAds {
         message: "Sorry! error while creating PostAd image",
       });
     }
-
-    console.log("newlyCreatedPostAdImages2",newlyCreatedPostAdImages)
 
     const addProperty = await this.__addProperty(
       title,
@@ -278,24 +184,21 @@ class PortalAds {
     if (!isValidMongoObject(addProperty)) {
       return addProperty;
     }
-
-    const pushUserPasses = await Promise.all( 
-          newlyCreatedPostAdImages.map(async(newlyCreatedPostAdImage)=>{
-            try{
+    try {
+      const pushUserPasses = await Promise.all(
+        newlyCreatedPostAdImages.map(async (newlyCreatedPostAdImage) => {
+          try {
             await newlyCreatedPostAdImage.save();
-            } catch (err){
-                console.log(err)
-            }
-
-          }) 
-    )
-
+          } catch (err) {
+            console.log(err);
+          }
+        })
+      );
+    } catch (error) {
+      console.log(error);
+    }
     newlyCreatedAdDescription.ownerId = newlyCreatedPropertyAd._id;
-    newlyCreatedPropertyAdPrice.propertyAdId = newlyCreatedPropertyAd._id;
-    // newlyCreatedAddDetails.ownerId = newlyCreatedPropertyAd._id;
-    // newlyCreatedPostAdImage.ownerId = newlyCreatedPropertyAd._id;
-
-    // newlyCreatedPropertyAd.details = newlyCreatedAddDetails;
+    newlyCreatedPropertyAdPrice.propertyAdId = newlyCreatedPropertyAd._id; 
     newlyCreatedPropertyAd.description = newlyCreatedAdDescription;
     newlyCreatedPropertyAd.image = newlyCreatedPostAdImages;
     newlyCreatedPropertyAd.ownerName = addProperty.ownerName;
@@ -305,8 +208,7 @@ class PortalAds {
 
     newlyCreatedPropertyAd.propertyId = addProperty._id;
     addProperty.ads = newlyCreatedPropertyAd;
-    addProperty.adType = "Real Estate";
-    // await newlyCreatedAddDetails.save();
+    addProperty.adType = "Real Estate"; 
     await newlyCreatedAdDescription.save();
 
     await newlyCreatedPropertyAd.save();
@@ -318,7 +220,37 @@ class PortalAds {
     });
   }
 
-  async __addProperty(title, description, price, status, images) { 
+async __createAdImage(PropertyAdId,userId,files){
+  const createdOn = new Date()
+  let newlyCreatedPostAdImages =[]
+  const pushImages = await Promise.all(
+    (files || []).map(async (image, index) => {
+      const fileName = "image" + Date.now() + index;
+      try {
+        const result = await cloudinary.uploader.upload(image.path, {
+          //   resource_type: "image",
+          public_id: `property/ads/uploads/images/${fileName}`,
+          overwrite: true,
+        });
+
+        newlyCreatedPostAdImages[index] = await new AdImage({
+          status: 1,
+          url: result.secure_url,
+          createdOn,
+          ownerId: PropertyAdId,
+          ownerType: "property",
+          createdBy: userId,
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    })
+  );
+
+  return newlyCreatedPostAdImages
+}
+
+  async __addProperty(title, description, price, status, images) {
     const createdOn = new Date();
     // validate request
 
@@ -900,7 +832,7 @@ class PortalAds {
 
             if (isValidMongoObject(newlyCreatedAdDescription)) {
               updates.description = newlyCreatedAdDescription;
-              await newlyCreatedAdDescription.save()
+              await newlyCreatedAdDescription.save();
             }
           }
 
@@ -918,7 +850,7 @@ class PortalAds {
 
             if (isValidMongoObject(foundPrice)) {
               updates.price = foundPrice;
-              await foundPrice.save()
+              await foundPrice.save();
             }
           }
 

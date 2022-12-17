@@ -48,18 +48,18 @@ class Goods {
         message: "sorry!...Invalid user",
       });
     }
-    if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 406
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid estate id",
-      });
-    }
+    // if (!isValidMongoObjectId(estateId)) {
+    //   this.res.statusCode = 406
+    //   return this.res.json({
+    //     success: false,
+    //     message: "sorry!...Invalid estate id",
+    //   });
+    // }
 
     const goodName = this.req.body.name || "";
     const goodDescription = this.req.body.description || "";
     const goodPrice = this.req.body.price || "";
-    const file = this.req.file;
+    const files = this.req.files;
 
     if (goodName.length < 3) {
       this.res.statusCode = 400
@@ -159,33 +159,19 @@ class Goods {
       });
     }
 
-    if (!file || !file.filename) {
-      this.res.statusCode = 400
+   
+   
+    if (!files || !Array.isArray(files) || files.length < 1) {
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!... Invalid Image file",
       });
     }
-    const fileName = "image" + Date.now();
-    let newlyCreatedGoodImage = {};
-    try {
-      const result = await cloudinary.uploader.upload(file.path, {
-        //   resource_type: "image",
-        public_id: `goods/uploads/images/${fileName}`,
-        overwrite: true,
-      });
 
-      newlyCreatedGoodImage = await new GoodImage({
-        status: 1,
-        url: result.secure_url,
-        createdOn,
-        createdBy: userId,
-      });
-    } catch (error) {
-      console.log(error);
-    }
+    let newlyCreatedGoodImages = await this.__createGoodImage(userId,files)
 
-    if (!isValidMongoObject(newlyCreatedGoodImage)) {
+    if (!isValidArrayOfMongoObject(newlyCreatedGoodImages)) {
       this.res.statusCode = 500
       return this.res.json({
         success: false,
@@ -259,22 +245,33 @@ class Goods {
 
     newlyCreatedGoodName.goodId = newlyCreatedGood._id;
     newlyCreatedGoodDescription.goodId = newlyCreatedGood._id;
-    newlyCreatedGoodPrice.goodId = newlyCreatedGood._id;
-    newlyCreatedGoodImage.goodId = newlyCreatedGood._id;
+    newlyCreatedGoodPrice.goodId = newlyCreatedGood._id; 
     newlyCreatedGoodOwnerDetails.goodId = newlyCreatedGood._id;
     newlyCreatedGoodEstateLinking.goodId = newlyCreatedGood._id;
     newlyCreatedGoodRating.goodId = newlyCreatedGood._id;
-
+    try {
+      const pushnewlyCreatedGoodImages = await Promise.all(
+        newlyCreatedGoodImages.map(async (newlyCreatedGoodImage) => {
+          try {
+            newlyCreatedGoodImage.goodId = newlyCreatedGood._id;
+            await newlyCreatedGoodImage.save();
+          } catch (err) {
+            console.log(err);
+          }
+        })
+      );
+    } catch (error) {
+      console.log(error);
+    }
     newlyCreatedGood.name = newlyCreatedGoodName.value;
     newlyCreatedGood.description = newlyCreatedGoodDescription;
     newlyCreatedGood.price = newlyCreatedGoodPrice;
-    newlyCreatedGood.image = newlyCreatedGoodImage;
+    newlyCreatedGood.image = newlyCreatedGoodImages;
     newlyCreatedGood.rating = newlyCreatedGoodRating;
 
     await newlyCreatedGoodName.save();
     await newlyCreatedGoodDescription.save();
-    await newlyCreatedGoodPrice.save();
-    await newlyCreatedGoodImage.save();
+    await newlyCreatedGoodPrice.save(); 
     await newlyCreatedGood.save();
     await newlyCreatedGoodOwnerDetails.save();
     await newlyCreatedGoodEstateLinking.save();
@@ -285,6 +282,38 @@ class Goods {
       message: "Good Created Succesfully",
       good: newlyCreatedGood,
     });
+  }
+
+
+  async __createGoodImage(userId,files){
+    const createdOn = new Date()
+ 
+
+
+    let newlyCreatedGoodImages =[]
+    const pushImages = await Promise.all(
+      (files || []).map(async (image, index) => {
+        const fileName = "image" + Date.now() + index;
+        try {
+          const result = await cloudinary.uploader.upload(image.path, {
+            //   resource_type: "image",
+            public_id: `goods/uploads/images/${fileName}`,
+            overwrite: true,
+          });
+  
+          newlyCreatedGoodImages[index] = await new GoodImage({
+            status: 1,
+            url: result.secure_url,
+            createdOn,  
+            createdBy: userId,
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      })
+    );
+  
+    return newlyCreatedGoodImages
   }
 
   async __getGoods() {
@@ -910,7 +939,7 @@ class Goods {
 
             try {
               const updateParticularGoodImage =
-                await GoodImage.findOneAndUpdate(
+                await GoodImage.updateMany(
                   {
                     status: 1,
                     goodId: contextId,
@@ -926,11 +955,10 @@ class Goods {
                         },
                       ],
                     },
-                  },
-                  { new: true }
+                  } 
                 );
 
-              goodUpdatableSet.image = updateParticularGoodImage;
+              // goodUpdatableSet.image = updateParticularGoodImage;
             } catch (error) {
               console.log(error);
             }
@@ -1146,112 +1174,7 @@ class Goods {
   } 
 
 
-
-
-  // to remove **********************************************************************
-
-  async __specialUpdateonGood() {
-    const createdOn = new Date();
-    // validate request
-
-    const user = this.res.user || {};
-    const userId = user._id;
-    const { _id: estateId } = this.res.estate || "";
-    if (!isValidMongoObjectId(userId)) {
-      this.res.statusCode = 406
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid user",
-      });
-    }
-    if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid estate id",
-      });
-    } 
-
-    // validate name
-    const foundGoods = await Good.find({ 
-    });
  
-
-    
-
-    const pushUserPasses = await Promise.all(
-      (foundGoods || []).map(async(foundGood, index) => {
-          const contextId = foundGood.createdBy;
-          const updateToMake = {
-            ownerName:"",
-            ownerEmail:"",
-            ownerPhone:"",
-          }
-
-          if (isValidMongoObjectId(contextId)) {
-              try {
-
-                  const particulatGoodOwner = await User.findOne({ 
-                      _id: contextId,
-                  } )
-
-                  if (isValidMongoObject(particulatGoodOwner)) {
-                    const ownerEmail = 
-                    user.emails && Array.isArray(user.emails)
-                      ? user.emails.find((email) =>
-                          stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
-                        )?.value
-                      : "";
-                 
-                const unformattedOwnerPhone = 
-                    user.phoneNumbers && Array.isArray(user.phoneNumbers)
-                      ? user.phoneNumbers.find((phoneNumbers) =>
-                          stringIsEqual(
-                            !!phoneNumbers.isPrimary && phoneNumbers.isPrimary,
-                            1
-                          )
-                        )
-                      : {};
-                
-                      const ownerPhone = `${unformattedOwnerPhone?.countryCode}` + `${unformattedOwnerPhone?.value}`
-                    updateToMake.ownerName= user?.name?.value
-                    updateToMake.ownerEmail= ownerEmail
-                    updateToMake.ownerPhone= user?.name?.value
-                    updateToMake.adType = "goods"
- 
-                    const updatableGood = await Good.updateOne({_id:foundGood._id},
-                      {
-                        $set: updateToMake
-                       , 
-                      $push: {
-                        updates: [
-                          {
-                            by: userId, // admin ID of the user who made this update
-                            action:"update Owner Details", //0:delete,1:added a new category,2:removed a category,3:published,4:unpublished,5:added new option group,6:removed an option group,7:updated an option group
-                            timing: createdOn,
-                          },
-                        ],
-                      },}
-                      
-                      
-                      ) 
-    
-
-                  }
-
-
-              } catch (error) {
-                  console.log(error);
-              }
-          }
-      })
-  );
-    return this.res.json({
-      success: true,
-      message: "Goods found",
-      goods: foundGoods,
-    });
-  }
 
 }
 module.exports = Goods;

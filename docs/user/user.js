@@ -17,16 +17,7 @@
  *       200:
  *         description: Returns current user details.
  */
-
-/**
- * @swagger
- * /estate?name="":
- *   get:
- *     description: find particular estate with query string!
- *     responses:
- *       200:
- *         description: Returns found estates.
- */
+ 
 
 /**
  * @swagger
@@ -47,7 +38,7 @@
 
 /**
  * @swagger
- * /estates:
+ * /estates?page=0&name=""&pageSize=4:
  *   get:
  *     description: find all estates!
  *     responses:
@@ -82,7 +73,7 @@
  *          description: A new resident email.
  *        - in: formData
  *          name: password
- *          type: number
+ *          type: string
  *          description: A new resident password.
  *        - in: formData
  *          name: houseAddress
@@ -124,7 +115,7 @@
  *          description: A pre-registered user phonenumber.
  *        - in: formData
  *          name: password
- *          type: number
+ *          type: string
  *          description: A pre-registered user password.
  *      responses:
  *        200:
