@@ -202,6 +202,44 @@ class Controller {
   async getServices() {
     return await new Services(this.req, this.res, this.next).__getServices();
   }
+
+
+
+  async createServicePostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__createServicePostPrice();
+  }
+  async updateServicePostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__updateServicePostPrice();
+  }
+  
+
+
+
+  async createBusinessPostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__createBusinessPostPrice();
+  }
+  async updateBusinessPostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__updateBusinessPostPrice();
+  }
+  
+
+
   
   async deleteService() {
     return await new Admin(this.req, this.res, this.next).__deleteService();
@@ -918,10 +956,24 @@ class Controller {
       this.next
     ).__updatePropertyAd();
   }
+  async createPropertyPostPrice() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__createPropertyPostPrice();
+  }
+  async updatePropertyPostPrice() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__updatePropertyPostPrice();
+  }
   
 
 
-
+  
 
 
   async findPropertyByID() {

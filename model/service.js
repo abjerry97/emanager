@@ -16,11 +16,18 @@ const defaultDate = {
   default: new Date(),
 };
 
+const defaultBoolean = {
+  type: Boolean,
+  default: false,
+};
 const serviceSchemaObject = {
   status: defaultString, //0:deleted,1:active
   ownerId: defaultString,
   adType:defaultString,
   category:defaultString,
+  isPublished:defaultBoolean,
+  isVerified:defaultBoolean,
+  isActive:defaultBoolean,
   image: [{ _id: defaultString, ...ServiceImage.getSchemaObject() }],
   details: { _id: defaultString, ...ServiceDetails.getSchemaObject() },
   name: { _id: defaultString, ...Name.getSchemaObject() },
