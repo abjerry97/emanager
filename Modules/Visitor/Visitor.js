@@ -291,7 +291,7 @@ class Visitor {
       ownerType: 2,
       estateId,
       ownerName:user.name.value,
-      houseAddress: foundUserHouseAddress.value,
+      houseAddress: foundUserHouseAddress,
     });
 
     if (!isValidMongoObject(newGuest)) {

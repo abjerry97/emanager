@@ -19,7 +19,7 @@ const guestSchemaObject = {
   name: { _id: defaultString, ...GuestName.getSchemaObject() },
   estateId: defaultString,
   ownerName: defaultString,
-  houseAddress: [{ _id: defaultString, ...HouseAddressName.getSchemaObject() }],
+  houseAddress:{ _id: defaultString, ...HouseAddressName.getSchemaObject() },
   numberOfGuests: defaultString,
   plateNumber: { _id: defaultString, ...GuestPlateNumber.getSchemaObject() },
   phoneNumber: { _id: defaultString, ...GuestPhoneNumber.getSchemaObject() },
