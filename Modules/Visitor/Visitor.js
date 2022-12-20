@@ -244,6 +244,7 @@ class Visitor {
   }
   async __createGuest(type) {
     const createdOn = new Date();
+    const user = this.res.user
     const userId = (this.res.user && this.res.user._id) || "";
     const { _id: estateId } = this.res.estate || "";
 
@@ -289,7 +290,8 @@ class Visitor {
       status: 1,
       ownerType: 2,
       estateId,
-      houseAddress: foundUserHouseAddress,
+      ownerName:user.name.value,
+      houseAddress: foundUserHouseAddress.value,
     });
 
     if (!isValidMongoObject(newGuest)) {
