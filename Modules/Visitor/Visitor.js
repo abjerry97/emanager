@@ -457,6 +457,7 @@ class Visitor {
         plateNumber: newGuest.plateNumber.value || "",
         companyName: newGuest.companyName.value || "",
         houseAddress: newGuest.houseAddress.value || "",
+        ownerName: newGuest.ownerName || "",
         createdOn: newGuest.createdOn,
         createdOn: newGuest.createdOn,
       },
