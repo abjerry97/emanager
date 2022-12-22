@@ -108,7 +108,7 @@ const isAdmin = async (req, res, next) => {
     }
   };
   
-  const isPortalUser = async (req, res, next) => {
+  const isPortalUser = async (req, res, next) => { 
     const authorization = req.headers.authorization;
     if (authorization) {
       const token = authorization.slice(7, authorization.length);
@@ -134,8 +134,7 @@ const isAdmin = async (req, res, next) => {
             if (isValidMongoObject(existingUserWalletSession)) {
               res.userWalletSessionToken = existingUserWalletSession.sessionToken;
             }
-            res.user = foundPortalUser;
-  
+            res.user = foundPortalUser; 
             const foundAdmin = await Admin.findOne(
               {
                 userId: decode._id,
@@ -143,7 +142,7 @@ const isAdmin = async (req, res, next) => {
                 //  name: decode.name.value
               },
               adminScheama
-            );
+            ); 
             if (isValidMongoObject(foundAdmin)) {
               res.admin = foundAdmin;
   

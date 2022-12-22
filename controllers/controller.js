@@ -970,9 +970,60 @@ class Controller {
       this.next
     ).__updatePropertyPostPrice();
   }
+  async adminApproveProperty() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__adminApproveProperty();
+  }
+  
+
+  async getUserProperties() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserProperties();
+  }
+  
+  async getUserParticularProperty() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserParticularProperty();
+  }
+  
+  async getUserPropertyAds() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserPropertyAds();
+  }
   
 
 
+  async getUserParticularPropertyAd() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserParticularPropertyAd();
+  }
+  
+
+  async publishPropertyAd() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__publishPropertyAd();
+  }
+  
+
+  
   
 
 

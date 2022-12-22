@@ -219,10 +219,13 @@ function portalDefaultRoute() {
     .post(isPortalUser, upload.array("image", 14), (req, res, next) => {
       return new Controller(req, res, next).createPostAd();
     });
-  router.route("/property/ads").get((req, res, next) => {
-    return new Controller(req, res, next).findAllPostAd();
-  });
-
+    router.route("/property/ads").get((req, res, next) => {
+      return new Controller(req, res, next).findAllPostAd();
+    });
+    router.route("/property/ads/:propertyId/approve").put(isPortalUser,(req, res, next) => {
+      return new Controller(req, res, next).adminApproveProperty();
+    });
+  
   router.route("/property/ads/:propertyAdId").get((req, res, next) => {
     return new Controller(req, res, next).findPropertyAdsByID();
   });
@@ -231,6 +234,26 @@ function portalDefaultRoute() {
   });
   router.route("/property/ads/post/price/update").put((req, res, next) => {
     return new Controller(req, res, next).updatePropertyPostPrice();
+  });
+
+  router.route("/user/properties").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserProperties();
+  });
+
+  router.route("/user/property/ads").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserPropertyAds();
+  });
+
+  router.route("/user/property/:propertyId").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserParticularProperty();
+  });
+
+  router.route("/user/property/ads/:propertyAdId").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserParticularPropertyAd();
+  });
+
+  router.route("/user/property/ads/:propertyAdId/publish").put(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).publishPropertyAd();
   });
 
 

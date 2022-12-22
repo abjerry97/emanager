@@ -26,7 +26,7 @@ const serviceSchemaObject = {
   adType:defaultString,
   category:defaultString,
   isPublished:defaultBoolean,
-  isVerified:defaultBoolean,
+  isApproved:defaultBoolean,
   isActive:defaultBoolean,
   image: [{ _id: defaultString, ...ServiceImage.getSchemaObject() }],
   details: { _id: defaultString, ...ServiceDetails.getSchemaObject() },

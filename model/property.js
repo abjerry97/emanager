@@ -23,7 +23,7 @@ const propertySchemaObject = {
   category: defaultString,
   isAvaliable: defaultString,
   isPublished:defaultBoolean,
-  isVerified:defaultBoolean,
+  isApproved:defaultBoolean,
   isActive:defaultBoolean,
   adType:defaultString,
   type:defaultString, 

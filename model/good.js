@@ -29,7 +29,7 @@ const goodSchemaObject = {
   ownerPhone:defaultString,
   ownerEmail:defaultString,
   isPublished:defaultBoolean,
-  isVerified:defaultBoolean,
+  isApproved:defaultBoolean,
   isActive:defaultBoolean,
   price: { _id: defaultString, ...GoodPrice.getSchemaObject() },
   ads:{ _id: defaultString, ...GoodAd.getSchemaObject() },

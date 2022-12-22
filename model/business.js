@@ -24,7 +24,7 @@ const businessSchemaObject = {
   ownerId:defaultString,
   estateId:defaultString,
   isPublished:defaultBoolean,
-  isVerified:defaultBoolean,
+  isApproved:defaultBoolean,
   isActive:defaultBoolean,
   adType:defaultString,
   image: [{ _id: defaultString, ...BusinessImage.getSchemaObject() }],

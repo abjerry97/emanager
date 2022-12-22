@@ -18,6 +18,7 @@ const guestSchemaObject = {
   status: defaultString, //0:deleted,1:active
   name: { _id: defaultString, ...GuestName.getSchemaObject() },
   estateId: defaultString,
+  ownerName: defaultString,
   houseAddress: [{ _id: defaultString, ...HouseAddressName.getSchemaObject() }],
   numberOfGuests: defaultString,
   plateNumber: { _id: defaultString, ...GuestPlateNumber.getSchemaObject() },

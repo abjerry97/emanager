@@ -13,11 +13,19 @@ const defaultDate = {
   type: Date,
   default: new Date(),
 };
+const defaultBoolean = {
+  type: Boolean,
+  default: false,
+};
 const propertyAdSchemaObject = {
   status: defaultString, //0:deleted,1:published,2:unpublished
   propertyId:defaultString,
   title: defaultString,
   category: defaultString,
+  isAvaliable: defaultString,
+  isPublished:defaultBoolean,
+  isApproved:defaultBoolean,
+  isActive:defaultBoolean,
   type: defaultString, 
   group: defaultString, 
   ownerPhone: defaultString,
