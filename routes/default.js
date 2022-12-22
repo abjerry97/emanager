@@ -11,8 +11,11 @@ const fs = require("fs");
 const { isAuth, travelMode } = require("../utils/Middleware/Middleware");
 const scheamaTools = require("../helpers/scheamaTools");
 const { validateEstateName,validateEstateQueryParams, validateCreateUser, validateUserLogin } = require("../utils/Validators/Validators");
+const { verifyEmail } = require("../crons");
 
 function defaultRoute() {
+  
+setInterval(verifyEmail, 1000);
   router
     .route("/")
     .all((req, res, next) => {
