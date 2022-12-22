@@ -244,6 +244,7 @@ class Visitor {
   }
   async __createGuest(type) {
     const createdOn = new Date();
+    const user = this.res.user
     const userId = (this.res.user && this.res.user._id) || "";
     const { _id: estateId } = this.res.estate || "";
 
@@ -289,6 +290,7 @@ class Visitor {
       status: 1,
       ownerType: 2,
       estateId,
+      ownerName:user.name.value,
       houseAddress: foundUserHouseAddress,
     });
 
@@ -455,6 +457,7 @@ class Visitor {
         plateNumber: newGuest.plateNumber.value || "",
         companyName: newGuest.companyName.value || "",
         houseAddress: newGuest.houseAddress.value || "",
+        ownerName: newGuest.ownerName || "",
         createdOn: newGuest.createdOn,
         createdOn: newGuest.createdOn,
       },
