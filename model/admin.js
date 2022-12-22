@@ -49,6 +49,7 @@ const adminSchemaObject = {
     ...AdminGuarantorsEmail.getSchemaObject(),
   },
   userId: defaultString,
+  estateId: defaultString,
   isTopmost: defaultString,
   role: defaultString, //0:Chairman,1:Vice Chairman
   updates: [

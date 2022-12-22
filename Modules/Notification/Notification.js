@@ -25,7 +25,7 @@ const User = require("../../model/user");
 const UserEstate = require("../../model/user-estate");
 const UserNotificationLinking = require("../../model/user-notification-linking");
 const UserNotifications = require("../../model/user-notifications");
-const { generateToken } = require("../../utils");
+
 const Authentication = require("../Authentication/auth");
 
 class Notification extends Authentication {

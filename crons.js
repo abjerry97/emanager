@@ -4,11 +4,13 @@ const {
   isValidMongoObjectId,
   isValidArrayOfMongoObject,
 } = require("./helpers/validators");
-const EmailVerify = require("./model/email-verify");
-const { sendEmailNovuNotification } = require("./utils");
+const EmailVerify = require("./model/email-verify"); 
+const { sendEmailNovuNotification } = require("./utils/NovuNotifications/NovuNotification");
+let shouldinvalidatePassRun = true
 const invalidatePass = async () => {
     const currentDate = new Date();
-  
+  if(shouldinvalidatePassRun){
+    shouldinvalidatePassRun= false
     try {
       const updatePass = await GatePass.find({
         status: 1,
@@ -49,11 +51,14 @@ const invalidatePass = async () => {
       }
     } catch (err) {
       console.log(err);
-    }
+    }}
+    shouldinvalidatePassRun =true
   };
+  let shouldverifyEmailRun = true;
   const verifyEmail = async () => {
-    const currentDate = new Date();
-  
+    const currentDate = new Date(); 
+if(shouldverifyEmailRun){
+  shouldverifyEmailRun = false;
     try {
       const unverifiedEmails = await EmailVerify.find({
         status: 1,
@@ -95,7 +100,7 @@ const invalidatePass = async () => {
               } else if (!unverifiedEmail.isMailSent) {
                 const result = await sendEmailNovuNotification(
                   unverifiedEmail.value,
-                  `http://localhost:1200/user/account/verify/${unverifiedEmail.token}`,
+                  `${process.env.BASE_URL}/user/account/verify/${unverifiedEmail.token}`,
                   "verify-email"
                 );
   
@@ -129,8 +134,9 @@ const invalidatePass = async () => {
       // console.log(updatePass);
     } catch (err) {
       console.log(err);
-    }
-    shouldVerifyRun = true;
+    } 
+    shouldverifyEmailRun = true;
+ }
   };
 
   module.exports = {

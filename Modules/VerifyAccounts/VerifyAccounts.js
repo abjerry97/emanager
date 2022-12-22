@@ -9,9 +9,7 @@ const {
 } = require("../../helpers/validators");
 const Email = require("../../model/email");
 const EmailVerify = require("../../model/email-verify");
-const User = require("../../model/user");
-
-const { generateToken, generateCode, handlePass } = require("../../utils");
+const User = require("../../model/user"); 
 
 class VerifyAccounts {
   constructor(req, res, next) {

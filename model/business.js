@@ -15,13 +15,20 @@ const defaultDate = {
   type: Date,
   default: new Date(),
 };
+const defaultBoolean = {
+  type: Boolean,
+  default: false,
+};
 const businessSchemaObject = {
   status: defaultString, //0:deleted,1:active
   ownerId:defaultString,
   estateId:defaultString,
+  isPublished:defaultBoolean,
+  isApproved:defaultBoolean,
+  isActive:defaultBoolean,
   adType:defaultString,
-  image: { _id: defaultString, ...BusinessImage.getSchemaObject() },
-  ads:{ _id: defaultString, ...BusinessAd.getSchemaObject() },
+  image: [{ _id: defaultString, ...BusinessImage.getSchemaObject() }],
+  ads:[{ _id: defaultString, ...BusinessAd.getSchemaObject() }],
   category:defaultString,
   name: { _id: defaultString, ...Name.getSchemaObject() },
   details: { _id: defaultString, ...BusinessDetails.getSchemaObject() },

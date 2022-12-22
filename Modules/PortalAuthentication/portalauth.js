@@ -17,17 +17,15 @@ const HouseAddressName = require("../../model/house-address");
 const Name = require("../../model/name");
 const Password = require("../../model/password");
 const PhoneNumber = require("../../model/phone-number"); 
-const User = require("../../model/user");
-const {
-  generateToken,
-  generateTokenAdmin,
-  generateTokenSecurity,
-} = require("../../utils");
+const User = require("../../model/user"); 
 const Security = require("../../model/security");
 const UserEstate = require("../../model/user-estate"); 
 const Wallet = require("../QpayWallet/QpayWallet"); 
 const EmanagerWallet = require("../EmanagerWallet/EmanagerWallet");
 const RegisteredEstate = require("../../model/registered-estate");
+const { generateToken,generateTokenAdmin } = require("../../utils/tokenGenerator");
+const scheamaTools = require("../../helpers/scheamaTools");
+const responseBody = require("../../helpers/responseBody");
 class PortalAuthentication {
   constructor(req, res, next) {
     this.req = req;
@@ -118,318 +116,8 @@ class PortalAuthentication {
       return userMode;
     }
     return newAdmin;
-  }
-  async __createSecurity(estateId, adminId) {
-    const createdOn = new Date();
-    if (!isValidMongoObjectId(estateId) || !isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 400
-      return this.res.json({
-        success: false,
-        message: "You need to provide a valid id",
-      });
-    }
-
-    const name = await this.__createName(this.req.body.name, 3);
-
-    if (!isValidMongoObject(name)) {
-      return name;
-    }
-    const email = await this.__createEmail(this.req.body.email, 3, 1, 0);
-    if (!isValidMongoObject(email)) {
-      return email;
-    }
-    const phone = await this.__createPhonenumber(this.req.body.phone, 3, 1, 0);
-
-    if (!isValidMongoObject(phone)) {
-      return phone;
-    }
-
-    const password = await this.__createPassword(this.req.body.password, 3);
-
-    if (!isValidMongoObject(password)) {
-      return password;
-    }
-
-    const houseAddress = await this.__createHouseAddress(
-      this.req.body.houseAddress || "security house",
-      3,
-      estateId,
-      "",
-      ""
-    );
-
-    if (!isValidMongoObject(houseAddress)) {
-      return houseAddress;
-    }
-
-    const newSecurity = await new Security({
-      status: 1, //0:deleted,1:active
-      ownerType: 3,
-      estateId,
-      createdBy: adminId, // admin ID of the admin who created this entry
-      createdOn,
-    });
-
-    if (!isValidMongoObject(newSecurity)) {
-      this.res.statusCode = 500
-      return this.res.json({
-        success: false,
-        message: "Error while creating security",
-      });
-    }
-    if (!isValidMongoObjectId(newSecurity._id)) {
-      this.res.statusCode = 500
-      return this.res.json({
-        success: false,
-        message: "Error while creating security",
-      });
-    }
-    const userEstate = await this.__createUserEstate(
-      newSecurity._id,
-      estateId,
-      3
-    );
-
-    if (!isValidMongoObject(userEstate)) {
-      this.res.statusCode = 500
-      return this.res.json({
-        success: false,
-        message: "Error while creating user estate",
-      });
-    }
-
-    const userMode = await this.__createUserMode(newSecurity._id, estateId, 3);
-
-    if (!isValidMongoObject(userMode)) {
-      return userMode;
-    }
-    name.ownerId = newSecurity._id;
-    email.ownerId = newSecurity._id;
-    phone.ownerId = newSecurity._id;
-    houseAddress.ownerId = newSecurity._id;
-    password.ownerId = newSecurity._id;
-    await name.save();
-    await email.save();
-    await phone.save();
-    await houseAddress.save();
-    await password.save();
-    await userEstate.save();
-    await userMode.save();
-    newSecurity.name = name;
-    newSecurity.emails = email;
-    newSecurity.phoneNumbers = phone;
-    newSecurity.houseAddress = houseAddress;
-
-    await newSecurity.save();
-
-    return newSecurity;
-  }
-
-  async __createTopmostAdmin() {
-    const { _id: userId } = this.res.user || "";
-    const { _id: estateId } = this.res.estate || "";
-    const createdOn = new Date();
-    if (!isValidMongoObjectId(estateId) || !isValidMongoObjectId(userId)) {
-      this.res.statusCode = 400
-      return this.res.json({
-        success: false,
-        message: "You didn't provide a valid id",
-      });
-    }
-
-    const existingTopmostAdmin = await this.__findTopmostAdmin();
-    if (isValidMongoObject(existingTopmostAdmin)) {
-      this.res.statusCode = 409
-      return this.res.json({
-        success: false,
-        message: "Topmost Admin already exist",
-      });
-    }
-    const foundUserPhonenumber = await PhoneNumber.findOne({
-      status: 1,
-      isPrimary: 1,
-      ownerId: userId,
-    });
-
-    if (!isValidMongoObject(foundUserPhonenumber)) {
-      this.res.statusCode = 404
-      return this.res.json({
-        success: false,
-        message: "phone number not found",
-      });
-    }
-    const foundUserEmail = await Email.findOne({
-      status: 1,
-      isPrimary: 1,
-      ownerId: userId,
-    });
-
-    if (!isValidMongoObject(foundUserEmail)) {
-      this.res.statusCode = 404
-      return this.res.json({
-        success: false,
-        message: "Email not found",
-      });
-    }
-    const foundUserfullName = await Name.findOne({
-      status: 1,
-      ownerId: userId,
-    });
-
-    if (!isValidMongoObject(foundUserfullName)) {
-      this.res.statusCode = 404
-      return this.res.json({
-        success: false,
-        message: "Name not found ",
-      });
-    }
-    const newAdmin = await new Admin({
-      status: 1, //0:deleted,1:active
-      userId,
-      isTopmost: 1,
-      role: 1,
-      createdOn,
-    });
-
-    if (!isValidMongoObject(newAdmin)) {
-      this.res.statusCode = 500
-      return this.res.json({
-        success: false,
-        message: "Error while creating admin",
-      });
-    }
-    const userEstate = await this.__createUserEstate(newAdmin._id, estateId, 1);
-
-    if (!isValidMongoObject(userEstate)) {
-      return userEstate;
-    }
-
-    const userMode = await this.__createUserMode(newAdmin._id, estateId, 1);
-
-    if (!isValidMongoObject(userMode)) {
-      return userMode;
-    }
-    newAdmin.adminId = newAdmin._id;
-    newAdmin.createdBy = newAdmin._id;
-    const password = process.env.DEFAULT_TOPMOST_ADMIN_PASSWORD || "";
-
-    if (isNaN(password) || password.length < 4) {
-      this.res.statusCode = 400
-      return this.res.json({
-        success: false,
-        message: "Invalid Default password",
-      });
-    }
-    const adminPassword = await this.__createPassword(password, 1);
-    if (!isValidMongoObject(adminPassword)) {
-      return adminPassword;
-    }
-
-    adminPassword.ownerId = newAdmin._id;
-
-    try {
-      const updateEmail = await Email.updateOne(
-        {
-          status: 1,
-          isAdmin: 0,
-          ownerType: 0,
-          isPrimary: 1,
-          ownerId: userId,
-        },
-        {
-          $set: { isAdmin: "1", adminId: newAdmin._id },
-        }
-      );
-    } catch (err) {
-      console.log(err);
-    }
-    try {
-      const updatePhoneNumber = await PhoneNumber.updateOne(
-        {
-          status: 1,
-          // isAdmin: 0,
-          ownerType: 0,
-          isPrimary: 1,
-          ownerId: userId,
-        },
-        {
-          $set: { isAdmin: "1", adminId: newAdmin._id },
-        }
-      );
-    } catch (err) {
-      console.log(err);
-    }
-
-    try {
-      const updateName = await Name.updateOne(
-        {
-          status: 1,
-          isAdmin: 0,
-          ownerType: 0,
-          ownerId: userId,
-        },
-        {
-          $set: { isAdmin: "1", adminId: newAdmin._id },
-        }
-      );
-    } catch (err) {
-      console.log(err);
-    }
-
-    const foundAdminPhonenumber = await PhoneNumber.findOne({
-      status: 1,
-      isAdmin: 1,
-      isPrimary: 1,
-      ownerId: userId,
-    });
-
-    if (!isValidMongoObject(foundAdminPhonenumber)) {
-      this.res.statusCode = 404
-      return this.res.json({
-        success: false,
-        message: "Admin phone number not found",
-      });
-    }
-    const foundAdminEmail = await Email.findOne({
-      status: 1,
-      isAdmin: 1,
-      isPrimary: 1,
-      ownerId: userId,
-    });
-
-    if (!isValidMongoObject(foundAdminEmail)) {
-      this.res.statusCode = 404
-      return this.res.json({
-        success: false,
-        message: "Admin Email not found",
-      });
-    }
-    const foundAdminfullName = await Name.findOne({
-      status: 1,
-      ownerId: userId,
-    });
-
-    if (!isValidMongoObject(foundAdminfullName)) {
-      this.res.statusCode = 404
-      return this.res.json({
-        success: false,
-        message: "Admin Name not found",
-      });
-    }
-    newAdmin.name = foundAdminfullName;
-    newAdmin.emails = foundAdminEmail;
-    newAdmin.phoneNumbers = foundAdminPhonenumber;
-
-    await adminPassword.save();
-    await newAdmin.save();
-    await userEstate.save();
-    await userMode.save();
-    return this.res.json({
-      success: true,
-      message: "Topmost admin created succesfully",
-    });
-  }
-
+  } 
+ 
   async __createPhonenumber(phone, type, isPrimary, isAdmin) {
     const createdOn = new Date();
     const phonenumber = phone;
@@ -843,11 +531,16 @@ class PortalAuthentication {
       });
     }
 
+    const newlyCreatedEmailVerify = await this.__verifyEmail(email, newUser);
+    if (!isValidMongoObject(newlyCreatedEmailVerify)) {
+      return newlyCreatedEmailVerify;
+    }
     // const newUserMode = await new UserMode({})
     name.ownerId = newUser._id;
     email.ownerId = newUser._id;
     phone.ownerId = newUser._id; 
     password.ownerId = newUser._id;
+    await newlyCreatedEmailVerify.save();
     await name.save();
     await email.save();
     await phone.save();
@@ -897,6 +590,28 @@ class PortalAuthentication {
       user: formatedUser,
       token: generateToken(newUser),
     });
+  }
+  
+  async __verifyEmail(email, newUser) {
+    const createdOn = new Date()
+    const newlyCreatedEmailVerify = await scheamaTools.createEmailVerify({
+      status: 1,
+      value: email.value,
+      ownerId: email._id,
+      userId: newUser._id,
+      ownerType: 0,
+      createdOn,
+      createdBy: newUser._id,
+      expiresOn: new Date(createdOn.getTime() + 86400000),
+      token: crypto.randomBytes(16).toString("hex"),
+    });
+    if (!newlyCreatedEmailVerify) {
+      return responseBody.ErrorResponse(
+        this.res,
+        "Error while creating Email Verification link"
+      );
+    }
+    return newlyCreatedEmailVerify
   }
   async __portalUserLogin() {
     const createdOn = new Date();

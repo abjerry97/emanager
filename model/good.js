@@ -16,6 +16,11 @@ const defaultAdType = {
   type: String,
   default: "goods",
 };
+
+const defaultBoolean = {
+  type: Boolean,
+  default: false,
+};
 const goodSchemaObject = {
   status: defaultString, //0:deleted,1:published,2:unpublished
   name:defaultString,
@@ -23,9 +28,12 @@ const goodSchemaObject = {
   ownerName:defaultString,
   ownerPhone:defaultString,
   ownerEmail:defaultString,
+  isPublished:defaultBoolean,
+  isApproved:defaultBoolean,
+  isActive:defaultBoolean,
   price: { _id: defaultString, ...GoodPrice.getSchemaObject() },
   ads:{ _id: defaultString, ...GoodAd.getSchemaObject() },
-  image: { _id: defaultString, ...GoodImage.getSchemaObject() },
+  image: [{ _id: defaultString, ...GoodImage.getSchemaObject() }],
   rating: { _id: defaultString, ...GoodRating.getSchemaObject() },
   description: {
     _id: defaultString,

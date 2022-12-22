@@ -9,7 +9,7 @@ const UserEstate = require("../../model/user-estate");
 const UserFamily = require("../../model/user-family");
 const UserMode = require("../../model/user-mode"); 
 const { refreshUserUpdates } = require("../utils");
-const { checkWalletUserSession } = require("../WalletTools/WalletTools");
+const { checkWalletUserSession, checkEstateWalletSession } = require("../WalletTools/WalletTools");
 const jwt = require("jsonwebtoken");
 
 const isAdmin = async (req, res, next) => {
@@ -108,7 +108,7 @@ const isAdmin = async (req, res, next) => {
     }
   };
   
-  const isPortalUser = async (req, res, next) => {
+  const isPortalUser = async (req, res, next) => { 
     const authorization = req.headers.authorization;
     if (authorization) {
       const token = authorization.slice(7, authorization.length);
@@ -134,8 +134,7 @@ const isAdmin = async (req, res, next) => {
             if (isValidMongoObject(existingUserWalletSession)) {
               res.userWalletSessionToken = existingUserWalletSession.sessionToken;
             }
-            res.user = foundPortalUser;
-  
+            res.user = foundPortalUser; 
             const foundAdmin = await Admin.findOne(
               {
                 userId: decode._id,
@@ -143,7 +142,7 @@ const isAdmin = async (req, res, next) => {
                 //  name: decode.name.value
               },
               adminScheama
-            );
+            ); 
             if (isValidMongoObject(foundAdmin)) {
               res.admin = foundAdmin;
   

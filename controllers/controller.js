@@ -202,6 +202,44 @@ class Controller {
   async getServices() {
     return await new Services(this.req, this.res, this.next).__getServices();
   }
+
+
+
+  async createServicePostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__createServicePostPrice();
+  }
+  async updateServicePostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__updateServicePostPrice();
+  }
+  
+
+
+
+  async createBusinessPostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__createBusinessPostPrice();
+  }
+  async updateBusinessPostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__updateBusinessPostPrice();
+  }
+  
+
+
   
   async deleteService() {
     return await new Admin(this.req, this.res, this.next).__deleteService();
@@ -598,13 +636,7 @@ class Controller {
     return await new Estate(this.req, this.res, this.next).__createEstate();
   }
 
-  async findEstate() {
-    return await new Estate(
-      this.req,
-      this.res,
-      this.next
-    ).__findEstateWithQueryString();
-  }
+ 
   async findEstates() {
     return await new Estate(this.req, this.res, this.next).__findAllEstates();
   }
@@ -924,10 +956,75 @@ class Controller {
       this.next
     ).__updatePropertyAd();
   }
+  async createPropertyPostPrice() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__createPropertyPostPrice();
+  }
+  async updatePropertyPostPrice() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__updatePropertyPostPrice();
+  }
+  async adminApproveProperty() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__adminApproveProperty();
+  }
+  
+
+  async getUserProperties() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserProperties();
+  }
+  
+  async getUserParticularProperty() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserParticularProperty();
+  }
+  
+  async getUserPropertyAds() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserPropertyAds();
+  }
   
 
 
+  async getUserParticularPropertyAd() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__getUserParticularPropertyAd();
+  }
+  
 
+  async publishPropertyAd() {
+    return await new PortalAds(
+      this.req,
+      this.res,
+      this.next
+    ).__publishPropertyAd();
+  }
+  
+
+  
+  
 
 
   async findPropertyByID() {

@@ -1,11 +1,7 @@
 const Controller = require("../controllers/controller");
-const express = require("express");
-const { isAuth, refreshUserUpdates, isPortalUser } = require("../utils");
-const { guestRoute } = require("./guest");
-const portalConfig = require("../config/portalConfig.json");
-const { profileRoute } = require("./userProfile");
-const router = express.Router();
-
+const express = require("express");  
+const portalConfig = require("../config/portalConfig.json"); 
+const router = express.Router(); 
 const upload = require("../helpers/multer");
 const path = require("path");
 const fs = require("fs");
@@ -13,6 +9,9 @@ const UserWalletTransaction = require("../model/emanager-user-wallet-transaction
 const  Bills = require("../model/bills");
 const  Name = require("../model/name");
 const BillPaymentHistory = require("../model/bill-payment-history");
+const UserEstate = require("../model/user-estate");
+const Admin = require("../model/admin");
+const {isPortalUser} = require("../utils/Middleware/Middleware");
 const { 
   isValidMongoObject,
   isValidMongoObjectId, 
@@ -25,7 +24,7 @@ function portalDefaultRoute() {
       next();
     })
     .get((req, res, next) => {
-      res.send(`<h1> Welcome ${process.env.DOMAIN_NAME}</h1>`);
+      res.send(`<h1> Welcome emanager web portal</h1>`);
     });
 
   router.route("/register").post((req, res, next) => {
@@ -42,12 +41,7 @@ function portalDefaultRoute() {
 
   router.route("/overview").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).portalOverview();
-  });
-
-  router.route("/estate").get((req, res, next) => {
-    return new Controller(req, res, next).findEstate();
-  });
-
+  }); 
   router.route("/estate").post((req, res, next) => {
     return new Controller(req, res, next).createEstate();
   });
@@ -159,7 +153,18 @@ function portalDefaultRoute() {
   router.route("/business/:businessId").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).getParticularBusiness();
   });
-
+  router.route("/business/ads/post/price/create").post((req, res, next) => {
+    return new Controller(req, res, next).createBusinessPostPrice();
+  });
+  router.route("/business/ads/post/price/update").put((req, res, next) => {
+    return new Controller(req, res, next).updateBusinessPostPrice();
+  });
+  router.route("/service/ads/post/price/create").post((req, res, next) => {
+    return new Controller(req, res, next).createServicePostPrice();
+  });
+  router.route("/service/ads/post/price/update").put((req, res, next) => {
+    return new Controller(req, res, next).updateServicePostPrice();
+  });
   router.route("/services").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).getServices();
   });
@@ -214,13 +219,44 @@ function portalDefaultRoute() {
     .post(isPortalUser, upload.array("image", 14), (req, res, next) => {
       return new Controller(req, res, next).createPostAd();
     });
-  router.route("/property/ads").get((req, res, next) => {
-    return new Controller(req, res, next).findAllPostAd();
-  });
-
+    router.route("/property/ads").get((req, res, next) => {
+      return new Controller(req, res, next).findAllPostAd();
+    });
+    router.route("/property/ads/:propertyId/approve").put(isPortalUser,(req, res, next) => {
+      return new Controller(req, res, next).adminApproveProperty();
+    });
+  
   router.route("/property/ads/:propertyAdId").get((req, res, next) => {
     return new Controller(req, res, next).findPropertyAdsByID();
   });
+  router.route("/property/ads/post/price/create").post((req, res, next) => {
+    return new Controller(req, res, next).createPropertyPostPrice();
+  });
+  router.route("/property/ads/post/price/update").put((req, res, next) => {
+    return new Controller(req, res, next).updatePropertyPostPrice();
+  });
+
+  router.route("/user/properties").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserProperties();
+  });
+
+  router.route("/user/property/ads").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserPropertyAds();
+  });
+
+  router.route("/user/property/:propertyId").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserParticularProperty();
+  });
+
+  router.route("/user/property/ads/:propertyAdId").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getUserParticularPropertyAd();
+  });
+
+  router.route("/user/property/ads/:propertyAdId/publish").put(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).publishPropertyAd();
+  });
+
+
 
   router.route("/properties").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).getProperty();
@@ -292,76 +328,124 @@ function portalDefaultRoute() {
     });
 
     router.route("/xxx").post(isPortalUser, async (req, res, next) => {
-        const billHistory = await BillPaymentHistory.find({})
-        if(!isValidArrayOfMongoObject(billHistory)){
-          res.json({})
-        }
-      const billHistoryUpdates = await Promise.all(
-        (billHistory || []).map(async (particularBillHistory, index) => {
-          if (isValidMongoObject(particularBillHistory)) {
-            const estateBill = await Bills.findOne({
-              status: 1,
-              _id: particularBillHistory.billId, 
-            }); 
-            if (isValidMongoObject(estateBill)) {
-            
-     
-                const foundownerName = await Name.findOne({
-                  ownerId: particularBillHistory.createdBy
-                })
-
-                let ownerName = ""
-                if (isValidMongoObject(foundownerName)) {
-                  ownerName = foundownerName.value
-                }
-              const newBillPaymentTransaction =  await new UserWalletTransaction({
-                status:1, 
-                type: estateBill.type,
-                isEstate: 1,
-                name: ownerName,
-                estateId: estateBill.estateId,
-                amount:particularBillHistory.amount,
-                isDebit: true,
-                ownerId: particularBillHistory.createdBy,
-                message: "test test",    
-                createdOn:particularBillHistory.createdOn,
-              })
-              if (!isValidMongoObject(newBillPaymentTransaction)) {
-                 res.statusCode = 500;
-                return  res.json({
-                  success: false,
-                  message: "Error initiating transaction, try again",
-                });
-            
-              }
-
-
-
-                await newBillPaymentTransaction.save()
-
-
-
-
-
-
-
-
-
-
-           
-        
+      const billHistory = await BillPaymentHistory.find({})
+      if(!isValidArrayOfMongoObject(billHistory)){
+        res.json({})
+      }
+    const billHistoryUpdates = await Promise.all(
+      (billHistory || []).map(async (particularBillHistory, index) => {
+        if (isValidMongoObject(particularBillHistory)) {
+          const estateBill = await Bills.findOne({
+            status: 1,
+            _id: particularBillHistory.billId, 
+          }); 
+          if (isValidMongoObject(estateBill)) {
           
    
-            }
-          }
-        })
-      );
-  
+              const foundownerName = await Name.findOne({
+                ownerId: particularBillHistory.createdBy
+              })
 
-      return res.json({
-        success:true
-      });
+              let ownerName = ""
+              if (isValidMongoObject(foundownerName)) {
+                ownerName = foundownerName.value
+              }
+            const newBillPaymentTransaction =  await new UserWalletTransaction({
+              status:1, 
+              type: estateBill.type,
+              isEstate: 1,
+              name: ownerName,
+              estateId: estateBill.estateId,
+              amount:particularBillHistory.amount,
+              isDebit: true,
+              ownerId: particularBillHistory.createdBy,
+              message: "test test",    
+              createdOn:particularBillHistory.createdOn,
+            })
+            if (!isValidMongoObject(newBillPaymentTransaction)) {
+               res.statusCode = 500;
+              return  res.json({
+                success: false,
+                message: "Error initiating transaction, try again",
+              });
+          
+            }
+
+
+
+              await newBillPaymentTransaction.save()
+
+
+
+
+
+
+
+
+
+
+         
+      
+        
+ 
+          }
+        }
+      })
+    );
+
+
+    return res.json({
+      success:true
     });
+  });
+  router.route("/xxx1").post(isPortalUser, async (req, res, next) => {
+      const billHistory = await Admin.find({})
+      if(!isValidArrayOfMongoObject(billHistory)){
+        res.json({})
+      }
+    const billHistoryUpdates = await Promise.all(
+      (billHistory || []).map(async (particularBillHistory, index) => {
+        if (isValidMongoObject(particularBillHistory)) {
+          const estateBill = await UserEstate.findOne({
+            status: 1,
+            ownerId: particularBillHistory._id, 
+          }); 
+          if (isValidMongoObject(estateBill)) {
+
+
+ 
+
+
+
+
+
+
+            try {
+              const updateEmail = await Admin.updateOne(
+                {
+                  status: 1,   
+                  _id: particularBillHistory._id,
+                },
+                {
+                  $set: {   estateId: estateBill.estateId },
+                }
+              );
+            } catch (err) {
+              console.log(err);
+            }
+      
+        
+ 
+          }
+        }
+      })
+    );
+
+
+    return res.json({
+      success:true
+    });
+  });
   
   // router.route("/asasasas").put(isPortalUser, async (req, res, next) => {
   //   try {

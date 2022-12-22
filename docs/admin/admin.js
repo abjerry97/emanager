@@ -19,16 +19,7 @@
  *        200:
  *          description: Returns   admin
  */
-
-/**
- * @swagger
- * /estate?name="":
- *   get:
- *     description: find particular estate with query string!
- *     responses:
- *       200:
- *         description: Returns found estates.
- */
+ 
 
 /**
  * @swagger
@@ -50,7 +41,7 @@
 
 /**
  * @swagger
- * /estates:
+ * /estates?page=1&pageSize=4&name="":
  *   get:
  *     description: find all estates!
  *     responses:

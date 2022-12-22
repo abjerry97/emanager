@@ -86,7 +86,7 @@
 
 /**
  * @swagger
- * /estates:
+ * /estates?page=1&pageSize=4&name="":
  *   get:
  *     description: get list of avaliable estates!
  *     responses:

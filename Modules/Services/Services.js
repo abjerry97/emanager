@@ -23,6 +23,8 @@ const { formatPhonenumber } = require("../../helpers/tools");
 const configDoc = require("./../../config/config.json");
 const BusinessDetails = require("../../model/business-details");
 const ServiceDetails = require("../../model/service-details");
+const BusinessAdPostPrice = require("../../model/business-ad-post-price");
+const ServiceAdPostPrice = require("../../model/service-ad-post-price");
 
 class Services extends Authentication {
   constructor(req, res, next) {
@@ -91,7 +93,7 @@ class Services extends Authentication {
     const formattedNewBusinessPhonenumber = formatPhonenumber(
       newBusinessPhonenumber
     );
-    if (
+     if (
       !isNaN(newBusinessCategory) &&
       !configDoc.BusinessType[newBusinessCategory]
     ) {
@@ -115,7 +117,7 @@ class Services extends Authentication {
       createdBy: userId,
       ownerId: userId,
       isAvailiable: 1,
-      category: newBusinessCategory,
+      category:configDoc.BusinessType[newBusinessCategory] || newBusinessCategory,
     });
     if (!isValidMongoObject(newlyCreatedBusiness)) {
       this.res.statusCode = 500;
@@ -798,6 +800,179 @@ class Services extends Authentication {
       business: foundBusiness,
     });
   }
+
+  async __createBusinessPostPrice() {
+    const createdOn = new Date();
+    // validate request
+
+    const admin = this.res.admin || {};
+    const { _id: adminId } = admin || "";
+
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "sorry, admin not found!!!",
+      });
+    }
+    if (!isValidMongoObjectId(adminId)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Invalid admin",
+      });
+    }
+
+    // const rawbillType = this.req.params.billType || "";
+    const amount = this.req.body.amount; 
+    // const billType = rawbillType.trim();
+    if (isNaN(amount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid Amount",
+      });
+    }
+
+    const existingBusinessAdPostPrice = await BusinessAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (isValidMongoObject(existingBusinessAdPostPrice)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "Business Ad Price already created",
+      });
+    }
+   
+    const newBusinessAdPostPrice = await new BusinessAdPostPrice({
+      status: 1, //0:deleted,1:active
+      currency: 0,
+      value: amount,
+      createdOn,
+      createdBy: adminId,
+    });
+    if (!isValidMongoObject(newBusinessAdPostPrice)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Business ad price not created",
+      });
+    }
+    await newBusinessAdPostPrice.save();
+
+    return this.res.json({
+      success: true,
+      message: "Price created Succesfully",
+      adPrice: newBusinessAdPostPrice,
+    });
+  }
+  async __updateBusinessPostPrice() {
+    const createdOn = new Date();
+    // validate request
+
+    const admin = this.res.admin || {};
+    const { _id: adminId } = admin || "";
+
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "sorry, admin not found!!!",
+      });
+    }
+    if (!isValidMongoObjectId(adminId)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Invalid admin",
+      });
+    }
+
+    // const rawbillType = this.req.params.billType || "";
+    const prevAmount = this.req.body.prevAmount;
+    const newAmount = this.req.body.newAmount;
+    // const billType = rawbillType.trim();
+    if (isNaN(prevAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid Previous Amount",
+      });
+    }
+
+    if (isNaN(newAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Provide a valid new Amount",
+      });
+    }
+    // if (billType.length < 3) {
+    //   return this.res.json({
+    //     success: false,
+    //     message: "oops!...enter a valid bill Type",
+    //   });
+    // }
+    const existingBusinessAdPostPrice = await BusinessAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (!isValidMongoObject(existingBusinessAdPostPrice)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Business Ad Price not found",
+      });
+    }
+    try {
+      const existingBusinessAdPostPrice = await BusinessAdPostPrice.updateMany(
+        {
+          status: 1,
+        },
+        {
+          $set: {
+            status: 0,
+          },
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+    if (!stringIsEqual(existingBusinessAdPostPrice.value, prevAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Incorrect Previous Business ad amount",
+      });
+    }
+
+    const newBusinessAdPostPrice = await new BusinessAdPostPrice({
+      status: 1, //0:deleted,1:active
+      currency: 0,
+      value: newAmount,
+      createdOn,
+      createdBy: adminId,
+    });
+    if (!isValidMongoObject(newBusinessAdPostPrice)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Business ad price not created",
+      });
+    }
+    await newBusinessAdPostPrice.save();
+
+    return this.res.json({
+      success: true,
+      message: "Price updated Succesfully",
+      adPrice: newBusinessAdPostPrice,
+    });
+  }
+
+
+
   async __createService() {
     const createdOn = new Date();
     // validate request
@@ -858,13 +1033,29 @@ class Services extends Authentication {
         message: "Sorry!...address not valid",
       });
     }
+ 
 
-    if (isNaN(newServiceCategory)) {
+    if (
+      !isNaN(newServiceCategory) &&
+      !configDoc.serviceCategory[newServiceCategory]
+    ) {
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
-        message: "Sorry!...category not valid",
+        message: "category not valid",
       });
     }
+
+    if (isNaN(newServiceCategory) && newServiceCategory.length < 3) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "category not valid",
+      });
+    }
+
+
+
     const newlyCreatedService = await new Service({
       status: 1,
       createdOn,
@@ -872,7 +1063,7 @@ class Services extends Authentication {
       ownerId: userId,
       isAvailiable: 1,
       type: 0, //0:service,1:company
-      category: newServiceCategory,
+      category:configDoc.serviceCategory[newServiceCategory] || newServiceCategory,
     });
 
     const newlyCreatedServiceEstateLinking = await new ServiceEstateLinking({
@@ -1397,5 +1588,179 @@ class Services extends Authentication {
       service: newlyCreatedService,
     });
   }
+
+
+  async __createServicePostPrice() {
+    const createdOn = new Date();
+    // validate request
+
+    const admin = this.res.admin || {};
+    const { _id: adminId } = admin || "";
+
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "sorry, admin not found!!!",
+      });
+    }
+    if (!isValidMongoObjectId(adminId)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Invalid admin",
+      });
+    }
+
+    // const rawbillType = this.req.params.billType || "";
+    const amount = this.req.body.amount; 
+    // const billType = rawbillType.trim();
+    if (isNaN(amount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid Amount",
+      });
+    }
+
+    const existingServiceAdPostPrice = await ServiceAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (isValidMongoObject(existingServiceAdPostPrice)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "Service Ad Price already created",
+      });
+    }
+   
+    const newServiceAdPostPrice = await new ServiceAdPostPrice({
+      status: 1, //0:deleted,1:active
+      currency: 0,
+      value: amount,
+      createdOn,
+      createdBy: adminId,
+    });
+    if (!isValidMongoObject(newServiceAdPostPrice)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "service ad price not created",
+      });
+    }
+    await newServiceAdPostPrice.save();
+
+    return this.res.json({
+      success: true,
+      message: "Price created Succesfully",
+      adPrice: newServiceAdPostPrice,
+    });
+  }
+  async __updateServicePostPrice() {
+    const createdOn = new Date();
+    // validate request
+
+    const admin = this.res.admin || {};
+    const { _id: adminId } = admin || "";
+
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "sorry, admin not found!!!",
+      });
+    }
+    if (!isValidMongoObjectId(adminId)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Invalid admin",
+      });
+    }
+
+    // const rawbillType = this.req.params.billType || "";
+    const prevAmount = this.req.body.prevAmount;
+    const newAmount = this.req.body.newAmount;
+    // const billType = rawbillType.trim();
+    if (isNaN(prevAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid Previous Amount",
+      });
+    }
+
+    if (isNaN(newAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Provide a valid new Amount",
+      });
+    }
+    // if (billType.length < 3) {
+    //   return this.res.json({
+    //     success: false,
+    //     message: "oops!...enter a valid bill Type",
+    //   });
+    // }
+    const existingServiceAdPostPrice = await ServiceAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (!isValidMongoObject(existingServiceAdPostPrice)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Service Ad Price not found",
+      });
+    }
+    try {
+      const existingServiceAdPostPrice = await ServiceAdPostPrice.updateMany(
+        {
+          status: 1,
+        },
+        {
+          $set: {
+            status: 0,
+          },
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+    if (!stringIsEqual(existingServiceAdPostPrice.value, prevAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Incorrect Previous service ad amount",
+      });
+    }
+
+    const newServiceAdPostPrice = await new ServiceAdPostPrice({
+      status: 1, //0:deleted,1:active
+      currency: 0,
+      value: newAmount,
+      createdOn,
+      createdBy: adminId,
+    });
+    if (!isValidMongoObject(newServiceAdPostPrice)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "service ad price not created",
+      });
+    }
+    await newServiceAdPostPrice.save();
+
+    return this.res.json({
+      success: true,
+      message: "Price updated Succesfully",
+      adPrice: newServiceAdPostPrice,
+    });
+  }
+
+
+
 }
 module.exports = Services;
