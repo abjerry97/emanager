@@ -55,7 +55,7 @@ class Estate {
     return responseBody.successResponseWithData(
       this.res,
       "Estates found",
-      "estate",
+      "estates",
       foundEstates
     );
   }
