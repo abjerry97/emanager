@@ -21,10 +21,7 @@ setInterval(verifyEmail, 1000);
     .all((req, res, next) => {
       next();
     })
-    .get(async (req, res, next) => {
-      const aaa = await scheamaTools.findUsers(
-        { status: 1 } );
-      console.log("2",aaa);
+    .get(async (req, res, next) => { 
       res.send("<h1> Welcome to E manager resident </h1>");
     });
 
