@@ -441,7 +441,7 @@ class Properties {
 
     if (category.length > 0) {
       query.category = category;
-    }
+    } 
     const foundProperty = await Property.find(query, {
       title: 1,
       category: 1,
@@ -453,6 +453,12 @@ class Properties {
       adType: 1,
       type: 1,
       createdOn: 1,
+      isAvaliable: 1,
+      isPublished: 1,
+      isActive: 1, 
+      "ads.isAvaliable": 1 ,
+      "ads.isPublished": 1,
+      "ads.isActive": 1,
       "description.value": 1,
       "price.value": 1,
       "image.url": 1,
@@ -541,6 +547,12 @@ class Properties {
         adType: 1,
         type: 1,
         createdOn: 1,
+         isAvaliable: 1,
+        isPublished: 1,
+        isActive: 1, 
+        "ads.isAvaliable": 1 ,
+        "ads.isPublished": 1,
+        "ads.isActive": 1,
         "description.value": 1,
         "price.value": 1,
         "image.url": 1,
@@ -617,6 +629,12 @@ class Properties {
       adType: 1,
       type: 1,
       createdOn: 1,
+      isAvaliable: 1,
+      isPublished: 1,
+      isActive: 1, 
+      "ads.isAvaliable": 1 ,
+      "ads.isPublished": 1,
+      "ads.isActive": 1,
       "description.value": 1,
       "price.value": 1,
       "image.url": 1,
