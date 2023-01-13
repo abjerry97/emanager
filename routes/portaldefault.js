@@ -229,10 +229,16 @@ function portalDefaultRoute() {
   router.route("/property/ads/:propertyAdId").get((req, res, next) => {
     return new Controller(req, res, next).findPropertyAdsByID();
   });
-  router.route("/property/ads/post/price/create").post((req, res, next) => {
+
+
+  
+  router.route("/property/ads/post/price").get((req, res, next) => {
+    return new Controller(req, res, next).getPropertyPostPrice();
+  });
+  router.route("/property/ads/post/price/create").post(isPortalUser,(req, res, next) => {
     return new Controller(req, res, next).createPropertyPostPrice();
   });
-  router.route("/property/ads/post/price/update").put((req, res, next) => {
+  router.route("/property/ads/post/price/update").put(isPortalUser,(req, res, next) => {
     return new Controller(req, res, next).updatePropertyPostPrice();
   });
 
