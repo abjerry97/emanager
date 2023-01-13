@@ -1,0 +1,588 @@
+[{
+        "t": {
+            "$date": "2023-01-10T21:06:07.531+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 23285,
+        "ctx": "-",
+        "msg": "Automatically disabling TLS 1.0, to force-enable TLS 1.0 specify --sslDisabledProtocols 'none'"
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.210+01:00"
+        },
+        "s": "I",
+        "c": "NETWORK",
+        "id": 4915701,
+        "ctx": "main",
+        "msg": "Initialized wire specification",
+        "attr": {
+            "spec": {
+                "incomingExternalClient": {
+                    "minWireVersion": 0,
+                    "maxWireVersion": 13
+                },
+                "incomingInternalClient": {
+                    "minWireVersion": 0,
+                    "maxWireVersion": 13
+                },
+                "outgoing": {
+                    "minWireVersion": 0,
+                    "maxWireVersion": 13
+                },
+                "isInternalClient": true
+            }
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.211+01:00"
+        },
+        "s": "W",
+        "c": "ASIO",
+        "id": 22601,
+        "ctx": "main",
+        "msg": "No TransportLayer configured during NetworkInterfacestartup"
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.211+01:00"
+        },
+        "s": "I",
+        "c": "NETWORK",
+        "id": 4648602,
+        "ctx": "main",
+        "msg": "Implicit TCP FastOpen in use."
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.214+01:00"
+        },
+        "s": "W",
+        "c": "ASIO",
+        "id": 22601,
+        "ctx": "main",
+        "msg": "No TransportLayer configured during NetworkInterfacestartup"
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.214+01:00"
+        },
+        "s": "I",
+        "c": "REPL",
+        "id": 5123008,
+        "ctx": "main",
+        "msg": "Successfully registered PrimaryOnlyService",
+        "attr": {
+            "service ": " TenantMigrationDonorService ",
+            " ns ": " config.tenantMigrationDonors "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.214+01:00"
+        },
+        "s": "I",
+        "c": "REPL",
+        "id": 5123008,
+        "ctx": "main",
+        "msg": "Successfully registered PrimaryOnlyService",
+        "attr": {
+            "service": "TenantMigrationRecipientService ",
+            "ns ": "config.tenantMigrationRecipients "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.214+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 5945603,
+        "ctx": "main",
+        "msg": "Multi threading initialized"
+    },
+    {
+        "t": {
+            "$date": "2023-01-10T21:06:08.216+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 4615611,
+        "ctx": "initandlisten",
+        "msg": "MongoDB starting",
+        "attr": {
+            "pid": 2376,
+            "port": 27017,
+            "dbPath": "C:/data/db/",
+            "architecture": "64-bit",
+            "host": "DESKTOP-1KVVH2H"
+        }
+    },
+    {
+        "t": {
+            "$date": "2023-01-10T21:06:08.216+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 23398,
+        "ctx": "initandlisten",
+        "msg": "Target operating system minimum version",
+        "attr ": {
+            "targetMinOS ": "Windows 7 / Windows Server 2008 R2 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.216+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 23403,
+        "ctx": "initandlisten",
+        "msg": "Build Info",
+        "attr": {
+            "buildInfo": {
+                "version": "5.0 .5 ",
+                "gitVersion ": "d65fd89df3fc039b5c55933c0f71d647a54510ae ",
+                "modules ": [],
+                "allocator ": "tcmalloc ",
+                "environment ": {
+                    "distmod ": "windows ",
+                    " distarch ": "x86_64 ",
+                    "target_arch ": "x86_64 "
+                }
+            }
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.216+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 51765,
+        "ctx": "initandlisten",
+        "msg": "Operating System",
+        "attr": {
+            "os": {
+                "name": "Microsoft Windows 10 ",
+                "version ": "10.0(build 19044)"
+            }
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.217+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 21951,
+        "ctx": "initandlisten",
+        "msg": "Options set by command line",
+        "attr": {
+            "options ": {}
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.222+01:00"
+        },
+        "s": "W",
+        "c": "STORAGE",
+        "id": 22271,
+        "ctx": "initandlisten",
+        "msg": "Detected unclean shutdown - Lock file is not empty ",
+        " attr ": {
+            "lockFile ": "C: \\data\\ db\\ mongod.lock "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.226+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22270,
+        "ctx": "initandlisten",
+        "msg": "Storage engine to use detected by data files",
+        "attr ": {
+            " dbpath ": "C: /data/db / ",
+            "storageEngine ": "wiredTiger "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.227+01:00"
+        },
+        "s": "W",
+        "c": "STORAGE",
+        "id": 22302,
+        "ctx": "initandlisten",
+        "msg": "Recovering data from the last clean checkpoint."
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:08.227+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22315,
+        "ctx": "initandlisten",
+        "msg": "Opening WiredTiger",
+        "attr": {
+            "config": "create,cache_size = 5597 M,session_max = 33000,eviction = (threads_min = 4, threads_max = 4),confi g_base = false,statistics = (fast),log = (enabled = true, archive = true, path = journal, compr essor = snappy), builtin_extension_config = (zstd = (compression_level = 6)),file_manager = (close_idle_time = 600, close_scan_interval = 10, close_handle_minimum = 250),statistic s_log = (wait = 0), verbose = [recovery_progress, checkpoint_progress, compact_progress],"
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:10.076+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381170: 75610][2376: 140731348243792],txn - recover: [WT_VERB_RECOVERY_PROGRESS] Recovering log 264 through 265 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:10.337+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673 381170: 337603][2376: 140731348243792], txn - recover: [WT_VERB_RECOVERY_PROGRESS] Recovering log 265 through 265 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:12.104+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381172: 104678][2376: 140731348243792],txn - recover: [WT_VERB_RECOVERY_ALL] Main recovery loop: starting at 264 / 279808 to 265 / 256 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:12.198+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381172: 198325][2376: 140731348243792], txn - recover: [WT_VERB_RECOVERY_PROGRESS] Recovering log 264 through 265 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:12.475+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381172: 475281][2376: 140731348243792],txn - recover: [WT_VERB_RECOVERY_PROGRESS] Recovering log 265 through 265 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:12.671+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381172: 670168][2376: 140731348243792],txn - recover: [WT_VERB_RECOVERY_ALL] Set global recovery timestamp: (0, 0)"
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:12.671+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381172: 671168][2376: 140731348243792],txn - recover: [WT_VERB_RECOVERY_ALL] Set global oldest timestamp: (0, 0)"
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:30.309+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381190: 309236][2376: 140731348243792],WT_SESSION.checkpoint: [WT_VERB_CHECKPOINT PROGRESS] saving checkpoint snapshot min: 3,snapshot max: 3 snapshot count: 0,oldest timestamp: (0, 0), meta checkpoint timestamp: (0, 0) base write gen: 231783 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:31.073+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 4795906,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger opened",
+        "attr": {
+            "durationMillis": 22846
+        }
+    },
+    {
+        "t": {
+            "$date": "2023-01-10T21:06:31.074+01:00"
+        },
+        "s": "I",
+        "c": "RECOVERY",
+        "id": 23987,
+        "ctx": "initandlisten",
+        "msg": "WiredTiger recoveryTimestamp",
+        "attr": {
+            "recoveryTimestamp ": {
+                "$timestamp ": {
+                    "t ": 0,
+                    "i ": 0
+                }
+            }
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:31.587+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 4366408,
+        "ctx": "initandlisten",
+        "msg": "No table logging settings modifications are required for existing WiredTiger tables ",
+        "attr ": {
+            "loggingEnabled": true
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:33.580+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22262,
+        "ctx": "initandlisten",
+        "msg": "Timestamp monitor starting"
+    },
+    {
+        "t": {
+            "$date": "2023-01-10T21:06:33.759+01:00"
+        },
+        "s": "W",
+        "c": "CONTROL",
+        "id": 22120,
+        "ctx": "initandlisten",
+        "msg": "Access control is not enabled for the database.Read and write access to data and configuration is unrestricted ",
+        "tags": ["startupWarnings "]
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:33.759+01:00"
+        },
+        "s": "W",
+        "c": "CONTROL",
+        "id": 22140,
+        "ctx": "initandlisten",
+        "msg": "This server is bound to localhost. Remote systems will be unable to connect to this server.Start the server with--bind_ip < address > to specify which IP addresses it should serve responses from or with --bind_ip_all to bind to all interfaces.If this behavior is desired, start the server with--bind_ip 127.0 .0 .1 to disable this warning ",
+        "tags ": ["startupWarnings "]
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:34.746+01:00"
+        },
+        "s": "I",
+        "c": "NETWORK",
+        "id": 4915702,
+        "ctx": "initandlisten",
+        "msg": "Updated wire specification",
+        "attr": {
+            "oldSpec": {
+                "incomingExternalClient ": {
+                    "minWireVersion ": 0,
+                    "maxWireVersion ": 13
+                },
+                "incomingInternalClient ": {
+                    "minWireVersion ": 0,
+                    "maxWireVersion ": 13
+                },
+                "outgoing ": {
+                    "minWireVersion ": 0,
+                    "maxWireVersion ": 13
+                },
+                "isInternalClient ": true
+            },
+            "newSpec ": {
+                "incomingExternalClient ": {
+                    "minWireVersion ": 0,
+                    "maxWireVersion ": 13
+                },
+                "incomingInternalClient ": {
+                    "minWireVersion ": 13,
+                    "maxWireVersion ": 13
+                },
+                "outgoing ": {
+                    "minWireVersion ": 13,
+                    "maxWireVersion ": 13
+                },
+                "isInternalClient ": true
+            }
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:34.804+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 5071100,
+        "ctx": "initandlisten",
+        "msg": "Clearing temp directory"
+    },
+    {
+        "t": {
+            "$date": "2023-01-10T21:06:34.947+01:00"
+        },
+        "s": "I",
+        "c": "CONTROL",
+        "id": 20536,
+        "ctx": "initandlisten",
+        "msg": "Flow Control is enabled on this deployment"
+    },
+
+    {
+        "t": {
+            "$date": "2023-01-10T21:06:37.730+01:00"
+        },
+        "s": "I",
+        "c": "FTDC",
+        "id": 20625,
+        "ctx": "initandlisten",
+        "msg": "Initializing full-time diagnostic data capture ",
+        "attr ": {
+            "dataDirectory ": "C: /data/db / diagnostic.data "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:37.971+01:00"
+        },
+        "s": "I",
+        "c": "REPL",
+        "id": 6015317,
+        "ctx": "initandlisten",
+        "msg": "Setting new configuration state",
+        "attr": {
+            "newState ": "ConfigReplicationDisabled ",
+            "oldState ": "ConfigPreStart "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:38.080+01:00"
+        },
+        "s": "I",
+        "c": "NETWORK",
+        "id": 23015,
+        "ctx": "listener",
+        "msg": "Listening on",
+        "attr": {
+            "address": "127.0.0.1"
+        }
+    },
+    {
+        "t": {
+            "$date": "2023-01-10T21:06:38.080+01:00"
+        },
+        "s": "I",
+        "c": "NETWORK",
+        "id": 23016,
+        "ctx": "listener",
+        "msg": "Waiting for connections",
+        "attr": {
+            "port": 27017,
+            "ssl ": "off "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:06:38.975+01:00"
+        },
+        "s": "I",
+        "c": "COMMAND",
+        "id": 51803,
+        "ctx": "LogicalSessionCacheReap",
+        "msg": "Slow query",
+        "attr": {
+            "type": "command ",
+            "ns ": "config.transactions ",
+            "command ": {
+                "find ": "transactions ",
+                "filter ": {
+                    "lastWriteDate ": {
+                        "$lt ": {
+                            "$date ": "2023 - 01 - 10 T19: 36: 38.261 Z "
+                        }
+                    }
+                },
+                " projection ": {
+                    "_id ": 1
+                },
+                "sort ": {
+                    "_id ": 1
+                },
+                "readConcern ": {},
+                "$db ": "config "
+            },
+            "planSummary ": "EOF",
+            "keysExamined ": 0,
+            "docsExamined ": 108,
+            "cursorExhausted ": true,
+            "numYields ": 0,
+            "nreturned ": 0,
+            "reslen ": 108,
+            "locks ": {
+                "Global": {
+                    "acquireCount ": {
+                        "r ": 2
+                    }
+                },
+                "Mutex ": {
+                    "acquireCount ": {
+                        "r ": 2
+                    }
+                }
+            },
+            "readConcern": {
+                "provenance": "implicitDefault"
+            },
+            "storage": {},
+            "protocol": "op_msg",
+            " durationMillis ": 464
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:07:33.765+01:00"
+        },
+        "s": "I",
+        "c": "STORAGE",
+        "id": 22430,
+        "ctx": "Checkpointer",
+        "msg": "WiredTiger message",
+        "attr": {
+            "message": "[1673381253: 764316][2376: 140731348243792],WT_SESSION.checkpoint: [WT_VERB_CHECKPOINT_PROGRESS] saving checkpoint snapshot min: 5, snapshot max: 5 snapshot count: 0, oldest timestamp: (0, 0),  meta checkpoint timestamp: (0, 0) base write gen: 23783 "
+        }
+    }, {
+        "t": {
+            "$date": "2023-01-10T21:07:38.193+01:00"
+        },
+        "s": "I",
+        "c": "INDEX",
+        "id": 5479200,
+        "ctx": "TTLMonitor",
+        "msg": "Deleted expired documents using index",
+        "attr": {
+            "namespace": "config.system.sessions",
+            "index": "lsidTTLIndex",
+            "numDeleted": 1,
+            "durationMillis ": 188
+        }
+    }
+]

@@ -1155,6 +1155,34 @@ class PortalAds {
       adPrice: newPropertyAdPostPrice,
     });
   }
+
+
+
+
+  
+  async __getPropertyPostPrice() {
+    const createdOn = new Date();
+ 
+    const existingPropertyAdPostPrice = await PropertyAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (!isValidMongoObject(existingPropertyAdPostPrice)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "Property Ad Price not yet created",
+      });
+    }
+
+   
+
+    return this.res.json({
+      success: true,
+      message: "Price gotten Succesfully",
+      adPrice: existingPropertyAdPostPrice,
+    });
+  }
   async __updatePropertyPostPrice() {
     const createdOn = new Date();
     // validate request
@@ -1213,6 +1241,13 @@ class PortalAds {
         message: "Property Ad Price not found",
       });
     }
+    if (!stringIsEqual(existingPropertyAdPostPrice.value, prevAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Incorrect Previous property ad amount",
+      });
+    }
     try {
       const existingPropertyAdPostPrice = await PropertyAdPostPrice.updateMany(
         {
@@ -1227,13 +1262,7 @@ class PortalAds {
     } catch (error) {
       console.log(error);
     }
-    if (!stringIsEqual(existingPropertyAdPostPrice.value, prevAmount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Incorrect Previous property ad amount",
-      });
-    }
+   
 
     const newPropertyAdPostPrice = await new PropertyAdPostPrice({
       status: 1, //0:deleted,1:active

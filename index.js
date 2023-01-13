@@ -54,7 +54,7 @@ app.use(
     extended: true,
   })
 ); 
-setInterval(invalidatePass, 1000);
+// setInterval(invalidatePass, 1000);
 
 app.use(bodyParser.json());
 app.use(compression());
