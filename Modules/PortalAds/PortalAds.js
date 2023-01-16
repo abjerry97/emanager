@@ -1222,6 +1222,7 @@ class PortalAds {
         status: 1, //0:deleted,1:active
         currency: 0,
         value: newAmount,
+        type: "property",
         createdOn,
         createdBy: adminId,
       });
@@ -1261,6 +1262,7 @@ class PortalAds {
       status: 1, //0:deleted,1:active
       currency: 0,
       value: newAmount,
+      type: "property",
       createdOn,
       createdBy: adminId,
     });

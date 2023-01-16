@@ -153,17 +153,13 @@ function portalDefaultRoute() {
   router.route("/business/:businessId").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).getParticularBusiness();
   });
-  router.route("/business/ads/post/price/create").post((req, res, next) => {
-    return new Controller(req, res, next).createBusinessPostPrice();
-  });
-  router.route("/business/ads/post/price/update").put((req, res, next) => {
+   
+  
+  router.route("/business/ads/post/price").get((req, res, next) => {
+    return new Controller(req, res, next).getBusinessPostPrice();
+  }); 
+  router.route("/business/ads/post/price/update").put(isPortalUser,(req, res, next) => {
     return new Controller(req, res, next).updateBusinessPostPrice();
-  });
-  router.route("/service/ads/post/price/create").post((req, res, next) => {
-    return new Controller(req, res, next).createServicePostPrice();
-  });
-  router.route("/service/ads/post/price/update").put((req, res, next) => {
-    return new Controller(req, res, next).updateServicePostPrice();
   });
   router.route("/services").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).getServices();
@@ -175,6 +171,12 @@ function portalDefaultRoute() {
       return new Controller(req, res, next).deleteService();
     });
 
+    router.route("/service/ads/post/price").get((req, res, next) => {
+      return new Controller(req, res, next).getServicePostPrice();
+    }); 
+    router.route("/service/ads/post/price/update").put(isPortalUser,(req, res, next) => {
+      return new Controller(req, res, next).updateServicePostPrice();
+    });
   router.route("/service/:serviceId/").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).getParticularService();
   });
@@ -184,7 +186,13 @@ function portalDefaultRoute() {
   router.route("/foods/delete").delete(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).deleteFood();
   });
-
+  
+  router.route("/food/ads/post/price").get((req, res, next) => {
+    return new Controller(req, res, next).getFoodPostPrice();
+  }); 
+  router.route("/food/ads/post/price/update").put(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).updateFoodPostPrice();
+  });
   router.route("/foods/:foodId").get(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).findFoodByID();
   });
@@ -202,6 +210,12 @@ function portalDefaultRoute() {
     return new Controller(req, res, next).findGoodByID();
   });
 
+  router.route("/good/ads/post/price").get((req, res, next) => {
+    return new Controller(req, res, next).getGoodPostPrice();
+  }); 
+  router.route("/good/ads/post/price/update").put(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).updateGoodPostPrice();
+  }); 
   router.route("/house/add").post(isPortalUser, (req, res, next) => {
     return new Controller(req, res, next).createHouse();
   });
@@ -234,10 +248,7 @@ function portalDefaultRoute() {
   
   router.route("/property/ads/post/price").get((req, res, next) => {
     return new Controller(req, res, next).getPropertyPostPrice();
-  });
-  // router.route("/property/ads/post/price/create").post(isPortalUser,(req, res, next) => {
-  //   return new Controller(req, res, next).createPropertyPostPrice();
-  // });
+  }); 
   router.route("/property/ads/post/price/update").put(isPortalUser,(req, res, next) => {
     return new Controller(req, res, next).updatePropertyPostPrice();
   });

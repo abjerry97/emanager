@@ -166,6 +166,23 @@ class Controller {
   async deleteBusiness() {
     return await new Admin(this.req, this.res, this.next).__deleteBusiness();
   }
+  
+
+  async getBusinessPostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__getBusinessPostPrice();
+  }
+  async updateBusinessPostPrice() {
+    return await new Services(
+      this.req,
+      this.res,
+      this.next
+    ).__updateBusinessPostPrice();
+  }
+  
   async createService() {
     return await new Services(this.req, this.res, this.next).__createService();
   }
@@ -205,12 +222,12 @@ class Controller {
 
 
 
-  async createServicePostPrice() {
+  async getServicePostPrice() {
     return await new Services(
       this.req,
       this.res,
       this.next
-    ).__createServicePostPrice();
+    ).__getServicePostPrice();
   }
   async updateServicePostPrice() {
     return await new Services(
@@ -222,22 +239,6 @@ class Controller {
   
 
 
-
-  async createBusinessPostPrice() {
-    return await new Services(
-      this.req,
-      this.res,
-      this.next
-    ).__createBusinessPostPrice();
-  }
-  async updateBusinessPostPrice() {
-    return await new Services(
-      this.req,
-      this.res,
-      this.next
-    ).__updateBusinessPostPrice();
-  }
-  
 
 
   
@@ -475,6 +476,31 @@ class Controller {
     return await new Goods(this.req, this.res, this.next).__findGoodByID();
   }
   
+ 
+  async getGoodPostPrice() {
+    return await new Goods(
+      this.req,
+      this.res,
+      this.next
+    ).__getGoodPostPrice();
+  }
+
+
+
+  
+  async updateGoodPostPrice() {
+    return await new Goods(
+      this.req,
+      this.res,
+      this.next
+    ).__updateGoodPostPrice();
+  }
+
+
+
+
+
+
   async getAdminDetails() {
     return await new Admin(this.req, this.res, this.next).__getAdminDetails();
   }
@@ -886,6 +912,24 @@ class Controller {
   }
 
   
+  async getFoodPostPrice() {
+    return await new Foods(
+      this.req,
+      this.res,
+      this.next
+    ).__getFoodPostPrice();
+  }
+
+
+
+  
+  async updateFoodPostPrice() {
+    return await new Foods(
+      this.req,
+      this.res,
+      this.next
+    ).__updateFoodPostPrice();
+  }
 
 
 

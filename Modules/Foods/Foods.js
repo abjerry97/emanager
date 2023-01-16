@@ -26,6 +26,7 @@ const FoodRating = require("../../model/food-rating");
 const FoodEstateLinking = require("../../model/food-estate-linking");
 const FoodFavourite = require("../../model/food-favourite");
 const FoodRatingLinking = require("../../model/food-rating-linking");
+const FoodAdPostPrice = require("../../model/food-ad-post-price");
 
 class Foods {
   constructor(req, res, next) {
@@ -1280,5 +1281,134 @@ const unformattedOwnerPhone =
 
 
 
+
+
+ 
+ 
+  async __getFoodPostPrice() {
+    const createdOn = new Date();
+ 
+    const existingFoodAdPostPrice = await FoodAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (!isValidMongoObject(existingFoodAdPostPrice)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "Food Ad Price not yet created",
+      });
+    }
+
+   
+
+    return this.res.json({
+      success: true,
+      message: "Price gotten Succesfully",
+      adPrice: existingFoodAdPostPrice,
+    });
+  }
+  async __updateFoodPostPrice() {
+    const createdOn = new Date();
+    // validate request
+
+    const admin = this.res.admin || {};
+    const { _id: adminId } = admin || "";
+
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "sorry, admin not found!!!",
+      });
+    }
+    if (!isValidMongoObjectId(adminId)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Invalid admin",
+      });
+    }
+
+ 
+    const newAmount = this.req.body.amount; 
+ 
+    if (isNaN(newAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Provide a valid new Amount",
+      });
+    }
+ 
+    const existingFoodAdPostPrice = await FoodAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (!isValidMongoObject(existingFoodAdPostPrice)) {
+      this.res.statusCode = 404;
+      const newFoodAdPostPrice = await new FoodAdPostPrice({
+        status: 1, //0:deleted,1:active
+        currency: 0,
+        value: newAmount,
+        type: "food",
+        createdOn,
+        createdBy: adminId,
+      });
+      if (!isValidMongoObject(newFoodAdPostPrice)) {
+        this.res.statusCode = 500;
+        return this.res.json({
+          success: false,
+          message: "property ad price not created",
+        });
+      }
+      await newFoodAdPostPrice.save();
+
+      return this.res.json({
+        success: true,
+        message: "Price updated Succesfully",
+        adPrice: newFoodAdPostPrice,
+      });
+    }
+ 
+    try {
+      const existingFoodAdPostPrice = await FoodAdPostPrice.updateMany(
+        {
+          status: 1,
+        },
+        {
+          $set: {
+            status: 0,
+          },
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+   
+
+    const newFoodAdPostPrice = await new FoodAdPostPrice({
+      status: 1, //0:deleted,1:active
+      currency: 0,
+      value: newAmount,
+      type: "food",
+      createdOn,
+      createdBy: adminId,
+    });
+    if (!isValidMongoObject(newFoodAdPostPrice)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "property ad price not created",
+      });
+    }
+    await newFoodAdPostPrice.save();
+
+    return this.res.json({
+      success: true,
+      message: "Price updated Succesfully",
+      adPrice: newFoodAdPostPrice,
+    });
+  } 
 }
 module.exports = Foods;

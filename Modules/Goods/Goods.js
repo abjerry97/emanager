@@ -26,6 +26,7 @@ const GoodRating = require("../../model/good-rating");
 const GoodEstateLinking = require("../../model/good-estate-linking");
 const GoodFavourite = require("../../model/good-favourite");
 const GoodRatingLinking = require("../../model/good-rating-linking");
+const GoodAdPostPrice = require("../../model/good-ad-post-price");
 
 class Goods {
   constructor(req, res, next) {
@@ -1174,7 +1175,133 @@ class Goods {
   } 
 
 
+  // Good
+  
+  async __getGoodPostPrice() {
+    const createdOn = new Date();
  
+    const existingGoodAdPostPrice = await GoodAdPostPrice.findOne({
+      status: 1,
+    });
 
+    if (!isValidMongoObject(existingGoodAdPostPrice)) {
+      this.res.statusCode = 409;
+      return this.res.json({
+        success: false,
+        message: "Good Ad Price not yet created",
+      });
+    }
+
+   
+
+    return this.res.json({
+      success: true,
+      message: "Price gotten Succesfully",
+      adPrice: existingGoodAdPostPrice,
+    });
+  }
+  async __updateGoodPostPrice() {
+    const createdOn = new Date();
+    // validate request
+
+    const admin = this.res.admin || {};
+    const { _id: adminId } = admin || "";
+
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "sorry, admin not found!!!",
+      });
+    }
+    if (!isValidMongoObjectId(adminId)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Invalid admin",
+      });
+    }
+
+ 
+    const newAmount = this.req.body.amount; 
+ 
+    if (isNaN(newAmount)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Provide a valid new Amount",
+      });
+    }
+ 
+    const existingGoodAdPostPrice = await GoodAdPostPrice.findOne({
+      status: 1,
+    });
+
+    if (!isValidMongoObject(existingGoodAdPostPrice)) {
+      this.res.statusCode = 404;
+      const newGoodAdPostPrice = await new GoodAdPostPrice({
+        status: 1, //0:deleted,1:active
+        currency: 0,
+        value: newAmount,
+        type: "good",
+        createdOn,
+        createdBy: adminId,
+      });
+      if (!isValidMongoObject(newGoodAdPostPrice)) {
+        this.res.statusCode = 500;
+        return this.res.json({
+          success: false,
+          message: "property ad price not created",
+        });
+      }
+      await newGoodAdPostPrice.save();
+
+      return this.res.json({
+        success: true,
+        message: "Price updated Succesfully",
+        adPrice: newGoodAdPostPrice,
+      });
+    }
+ 
+    try {
+      const existingGoodAdPostPrice = await GoodAdPostPrice.updateMany(
+        {
+          status: 1,
+        },
+        {
+          $set: {
+            status: 0,
+          },
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+   
+
+    const newGoodAdPostPrice = await new GoodAdPostPrice({
+      status: 1, //0:deleted,1:active
+      currency: 0,
+      value: newAmount,
+      type: "good",
+      createdOn,
+      createdBy: adminId,
+    });
+    if (!isValidMongoObject(newGoodAdPostPrice)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "property ad price not created",
+      });
+    }
+    await newGoodAdPostPrice.save();
+
+    return this.res.json({
+      success: true,
+      message: "Price updated Succesfully",
+      adPrice: newGoodAdPostPrice,
+    });
+  }
+  // Good
 }
 module.exports = Goods;

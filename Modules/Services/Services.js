@@ -800,72 +800,28 @@ class Services extends Authentication {
       business: foundBusiness,
     });
   }
-
-  async __createBusinessPostPrice() {
+  // Business
+  async __getBusinessPostPrice() {
     const createdOn = new Date();
-    // validate request
-
-    const admin = this.res.admin || {};
-    const { _id: adminId } = admin || "";
-
-    if (!isValidMongoObject(admin)) {
-      this.res.statusCode = 404;
-      return this.res.json({
-        success: false,
-        message: "sorry, admin not found!!!",
-      });
-    }
-    if (!isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 404;
-      return this.res.json({
-        success: false,
-        message: "Invalid admin",
-      });
-    }
-
-    // const rawbillType = this.req.params.billType || "";
-    const amount = this.req.body.amount; 
-    // const billType = rawbillType.trim();
-    if (isNaN(amount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Invalid Amount",
-      });
-    }
-
+ 
     const existingBusinessAdPostPrice = await BusinessAdPostPrice.findOne({
       status: 1,
     });
 
-    if (isValidMongoObject(existingBusinessAdPostPrice)) {
+    if (!isValidMongoObject(existingBusinessAdPostPrice)) {
       this.res.statusCode = 409;
       return this.res.json({
         success: false,
-        message: "Business Ad Price already created",
+        message: "Business Ad Price not yet created",
       });
     }
+
    
-    const newBusinessAdPostPrice = await new BusinessAdPostPrice({
-      status: 1, //0:deleted,1:active
-      currency: 0,
-      value: amount,
-      createdOn,
-      createdBy: adminId,
-    });
-    if (!isValidMongoObject(newBusinessAdPostPrice)) {
-      this.res.statusCode = 500;
-      return this.res.json({
-        success: false,
-        message: "Business ad price not created",
-      });
-    }
-    await newBusinessAdPostPrice.save();
 
     return this.res.json({
       success: true,
-      message: "Price created Succesfully",
-      adPrice: newBusinessAdPostPrice,
+      message: "Price gotten Succesfully",
+      adPrice: existingBusinessAdPostPrice,
     });
   }
   async __updateBusinessPostPrice() {
@@ -890,18 +846,9 @@ class Services extends Authentication {
       });
     }
 
-    // const rawbillType = this.req.params.billType || "";
-    const prevAmount = this.req.body.prevAmount;
-    const newAmount = this.req.body.newAmount;
-    // const billType = rawbillType.trim();
-    if (isNaN(prevAmount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Invalid Previous Amount",
-      });
-    }
-
+ 
+    const newAmount = this.req.body.amount; 
+ 
     if (isNaN(newAmount)) {
       this.res.statusCode = 400;
       return this.res.json({
@@ -909,23 +856,37 @@ class Services extends Authentication {
         message: "Provide a valid new Amount",
       });
     }
-    // if (billType.length < 3) {
-    //   return this.res.json({
-    //     success: false,
-    //     message: "oops!...enter a valid bill Type",
-    //   });
-    // }
+ 
     const existingBusinessAdPostPrice = await BusinessAdPostPrice.findOne({
       status: 1,
     });
 
     if (!isValidMongoObject(existingBusinessAdPostPrice)) {
       this.res.statusCode = 404;
+      const newBusinessAdPostPrice = await new BusinessAdPostPrice({
+        status: 1, //0:deleted,1:active
+        currency: 0,
+        value: newAmount,
+        type: "business",
+        createdOn,
+        createdBy: adminId,
+      });
+      if (!isValidMongoObject(newBusinessAdPostPrice)) {
+        this.res.statusCode = 500;
+        return this.res.json({
+          success: false,
+          message: "business ad price not created",
+        });
+      }
+      await newBusinessAdPostPrice.save();
+
       return this.res.json({
-        success: false,
-        message: "Business Ad Price not found",
+        success: true,
+        message: "Price updated Succesfully",
+        adPrice: newBusinessAdPostPrice,
       });
     }
+ 
     try {
       const existingBusinessAdPostPrice = await BusinessAdPostPrice.updateMany(
         {
@@ -940,18 +901,13 @@ class Services extends Authentication {
     } catch (error) {
       console.log(error);
     }
-    if (!stringIsEqual(existingBusinessAdPostPrice.value, prevAmount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Incorrect Previous Business ad amount",
-      });
-    }
+   
 
     const newBusinessAdPostPrice = await new BusinessAdPostPrice({
       status: 1, //0:deleted,1:active
       currency: 0,
       value: newAmount,
+      type: "business",
       createdOn,
       createdBy: adminId,
     });
@@ -959,7 +915,7 @@ class Services extends Authentication {
       this.res.statusCode = 500;
       return this.res.json({
         success: false,
-        message: "Business ad price not created",
+        message: "business ad price not created",
       });
     }
     await newBusinessAdPostPrice.save();
@@ -970,7 +926,7 @@ class Services extends Authentication {
       adPrice: newBusinessAdPostPrice,
     });
   }
-
+  // Business
 
 
   async __createService() {
@@ -1590,71 +1546,29 @@ class Services extends Authentication {
   }
 
 
-  async __createServicePostPrice() {
+  
+
+  async __getServicePostPrice() {
     const createdOn = new Date();
-    // validate request
-
-    const admin = this.res.admin || {};
-    const { _id: adminId } = admin || "";
-
-    if (!isValidMongoObject(admin)) {
-      this.res.statusCode = 404;
-      return this.res.json({
-        success: false,
-        message: "sorry, admin not found!!!",
-      });
-    }
-    if (!isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 404;
-      return this.res.json({
-        success: false,
-        message: "Invalid admin",
-      });
-    }
-
-    // const rawbillType = this.req.params.billType || "";
-    const amount = this.req.body.amount; 
-    // const billType = rawbillType.trim();
-    if (isNaN(amount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Invalid Amount",
-      });
-    }
-
+ 
     const existingServiceAdPostPrice = await ServiceAdPostPrice.findOne({
       status: 1,
     });
 
-    if (isValidMongoObject(existingServiceAdPostPrice)) {
+    if (!isValidMongoObject(existingServiceAdPostPrice)) {
       this.res.statusCode = 409;
       return this.res.json({
         success: false,
-        message: "Service Ad Price already created",
+        message: "Service Ad Price not yet created",
       });
     }
+
    
-    const newServiceAdPostPrice = await new ServiceAdPostPrice({
-      status: 1, //0:deleted,1:active
-      currency: 0,
-      value: amount,
-      createdOn,
-      createdBy: adminId,
-    });
-    if (!isValidMongoObject(newServiceAdPostPrice)) {
-      this.res.statusCode = 500;
-      return this.res.json({
-        success: false,
-        message: "service ad price not created",
-      });
-    }
-    await newServiceAdPostPrice.save();
 
     return this.res.json({
       success: true,
-      message: "Price created Succesfully",
-      adPrice: newServiceAdPostPrice,
+      message: "Price gotten Succesfully",
+      adPrice: existingServiceAdPostPrice,
     });
   }
   async __updateServicePostPrice() {
@@ -1679,18 +1593,9 @@ class Services extends Authentication {
       });
     }
 
-    // const rawbillType = this.req.params.billType || "";
-    const prevAmount = this.req.body.prevAmount;
-    const newAmount = this.req.body.newAmount;
-    // const billType = rawbillType.trim();
-    if (isNaN(prevAmount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Invalid Previous Amount",
-      });
-    }
-
+ 
+    const newAmount = this.req.body.amount; 
+ 
     if (isNaN(newAmount)) {
       this.res.statusCode = 400;
       return this.res.json({
@@ -1698,23 +1603,37 @@ class Services extends Authentication {
         message: "Provide a valid new Amount",
       });
     }
-    // if (billType.length < 3) {
-    //   return this.res.json({
-    //     success: false,
-    //     message: "oops!...enter a valid bill Type",
-    //   });
-    // }
+ 
     const existingServiceAdPostPrice = await ServiceAdPostPrice.findOne({
       status: 1,
     });
 
     if (!isValidMongoObject(existingServiceAdPostPrice)) {
       this.res.statusCode = 404;
+      const newServiceAdPostPrice = await new ServiceAdPostPrice({
+        status: 1, //0:deleted,1:active
+        currency: 0,
+        value: newAmount,
+        type: "service",
+        createdOn,
+        createdBy: adminId,
+      });
+      if (!isValidMongoObject(newServiceAdPostPrice)) {
+        this.res.statusCode = 500;
+        return this.res.json({
+          success: false,
+          message: "service ad price not created",
+        });
+      }
+      await newServiceAdPostPrice.save();
+
       return this.res.json({
-        success: false,
-        message: "Service Ad Price not found",
+        success: true,
+        message: "Price updated Succesfully",
+        adPrice: newServiceAdPostPrice,
       });
     }
+ 
     try {
       const existingServiceAdPostPrice = await ServiceAdPostPrice.updateMany(
         {
@@ -1729,18 +1648,13 @@ class Services extends Authentication {
     } catch (error) {
       console.log(error);
     }
-    if (!stringIsEqual(existingServiceAdPostPrice.value, prevAmount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Incorrect Previous service ad amount",
-      });
-    }
+   
 
     const newServiceAdPostPrice = await new ServiceAdPostPrice({
       status: 1, //0:deleted,1:active
       currency: 0,
       value: newAmount,
+      type: "service",
       createdOn,
       createdBy: adminId,
     });
@@ -1758,9 +1672,6 @@ class Services extends Authentication {
       message: "Price updated Succesfully",
       adPrice: newServiceAdPostPrice,
     });
-  }
-
-
-
+  } 
 }
 module.exports = Services;
