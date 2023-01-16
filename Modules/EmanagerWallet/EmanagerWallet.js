@@ -315,13 +315,7 @@ class EmanagerWallet {
 
         return newlyCreatedEmanagerUserWalletBalance;
       }
-
-      // to remove ###############################
-      // this.res.statusCode = 500;
-      // return this.res.json({
-      //   success: false,
-      //   message: "Error Fetching balance",
-      // });
+ 
     }
     return emanagerUserWalletBalance;
   }
