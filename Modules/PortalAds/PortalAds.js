@@ -1088,77 +1088,73 @@ class PortalAds {
     });
   }
 
-  async __createPropertyPostPrice() {
-    const createdOn = new Date();
-    // validate request
+  // async __createPropertyPostPrice() {
+  //   const createdOn = new Date();
+  //   // validate request
 
-    const admin = this.res.admin || {};
-    const { _id: adminId } = admin || "";
+  //   const admin = this.res.admin || {};
+  //   const { _id: adminId } = admin || "";
 
-    if (!isValidMongoObject(admin)) {
-      this.res.statusCode = 404;
-      return this.res.json({
-        success: false,
-        message: "sorry, admin not found!!!",
-      });
-    }
-    if (!isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 404;
-      return this.res.json({
-        success: false,
-        message: "Invalid admin",
-      });
-    }
+  //   if (!isValidMongoObject(admin)) {
+  //     this.res.statusCode = 404;
+  //     return this.res.json({
+  //       success: false,
+  //       message: "sorry, admin not found!!!",
+  //     });
+  //   }
+  //   if (!isValidMongoObjectId(adminId)) {
+  //     this.res.statusCode = 404;
+  //     return this.res.json({
+  //       success: false,
+  //       message: "Invalid admin",
+  //     });
+  //   }
 
-    // const rawbillType = this.req.params.billType || "";
-    const amount = this.req.body.amount;
-    // const billType = rawbillType.trim();
-    if (isNaN(amount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Invalid Amount",
-      });
-    }
+  //   // const rawbillType = this.req.params.billType || "";
+  //   const amount = this.req.body.amount;
+  //   // const billType = rawbillType.trim();
+  //   if (isNaN(amount)) {
+  //     this.res.statusCode = 400;
+  //     return this.res.json({
+  //       success: false,
+  //       message: "Invalid Amount",
+  //     });
+  //   }
 
-    const existingPropertyAdPostPrice = await PropertyAdPostPrice.findOne({
-      status: 1,
-    });
+  //   const existingPropertyAdPostPrice = await PropertyAdPostPrice.findOne({
+  //     status: 1,
+  //   });
 
-    if (isValidMongoObject(existingPropertyAdPostPrice)) {
-      this.res.statusCode = 409;
-      return this.res.json({
-        success: false,
-        message: "Property Ad Price already created",
-      });
-    }
+  //   if (isValidMongoObject(existingPropertyAdPostPrice)) {
+  //     this.res.statusCode = 409;
+  //     return this.res.json({
+  //       success: false,
+  //       message: "Property Ad Price already created",
+  //     });
+  //   }
 
-    const newPropertyAdPostPrice = await new PropertyAdPostPrice({
-      status: 1, //0:deleted,1:active
-      currency: 0,
-      value: amount,
-      createdOn,
-      createdBy: adminId,
-    });
-    if (!isValidMongoObject(newPropertyAdPostPrice)) {
-      this.res.statusCode = 500;
-      return this.res.json({
-        success: false,
-        message: "property ad price not created",
-      });
-    }
-    await newPropertyAdPostPrice.save();
+  //   const newPropertyAdPostPrice = await new PropertyAdPostPrice({
+  //     status: 1, //0:deleted,1:active
+  //     currency: 0,
+  //     value: amount,
+  //     createdOn,
+  //     createdBy: adminId,
+  //   });
+  //   if (!isValidMongoObject(newPropertyAdPostPrice)) {
+  //     this.res.statusCode = 500;
+  //     return this.res.json({
+  //       success: false,
+  //       message: "property ad price not created",
+  //     });
+  //   }
+  //   await newPropertyAdPostPrice.save();
 
-    return this.res.json({
-      success: true,
-      message: "Price created Succesfully",
-      adPrice: newPropertyAdPostPrice,
-    });
-  }
-
-
-
-
+  //   return this.res.json({
+  //     success: true,
+  //     message: "Price created Succesfully",
+  //     adPrice: newPropertyAdPostPrice,
+  //   });
+  // }
   
   async __getPropertyPostPrice() {
     const createdOn = new Date();
@@ -1205,18 +1201,9 @@ class PortalAds {
       });
     }
 
-    // const rawbillType = this.req.params.billType || "";
-    const prevAmount = this.req.body.prevAmount;
-    const newAmount = this.req.body.newAmount;
-    // const billType = rawbillType.trim();
-    if (isNaN(prevAmount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Invalid Previous Amount",
-      });
-    }
-
+ 
+    const newAmount = this.req.body.amount; 
+ 
     if (isNaN(newAmount)) {
       this.res.statusCode = 400;
       return this.res.json({
@@ -1224,30 +1211,36 @@ class PortalAds {
         message: "Provide a valid new Amount",
       });
     }
-    // if (billType.length < 3) {
-    //   return this.res.json({
-    //     success: false,
-    //     message: "oops!...enter a valid bill Type",
-    //   });
-    // }
+ 
     const existingPropertyAdPostPrice = await PropertyAdPostPrice.findOne({
       status: 1,
     });
 
     if (!isValidMongoObject(existingPropertyAdPostPrice)) {
       this.res.statusCode = 404;
+      const newPropertyAdPostPrice = await new PropertyAdPostPrice({
+        status: 1, //0:deleted,1:active
+        currency: 0,
+        value: newAmount,
+        createdOn,
+        createdBy: adminId,
+      });
+      if (!isValidMongoObject(newPropertyAdPostPrice)) {
+        this.res.statusCode = 500;
+        return this.res.json({
+          success: false,
+          message: "property ad price not created",
+        });
+      }
+      await newPropertyAdPostPrice.save();
+
       return this.res.json({
-        success: false,
-        message: "Property Ad Price not found",
+        success: true,
+        message: "Price updated Succesfully",
+        adPrice: newPropertyAdPostPrice,
       });
     }
-    if (!stringIsEqual(existingPropertyAdPostPrice.value, prevAmount)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "Incorrect Previous property ad amount",
-      });
-    }
+ 
     try {
       const existingPropertyAdPostPrice = await PropertyAdPostPrice.updateMany(
         {
@@ -1395,7 +1388,7 @@ class PortalAds {
 
     return this.res.json({
       success: true,
-      message: "Property approved Succesfully",
+      message: `Property ${stringIsEqual(isApproved, "true")?`approved` : `disapproved` }  Succesfully`,
     });
   }
 }

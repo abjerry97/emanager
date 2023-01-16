@@ -956,13 +956,13 @@ class Controller {
       this.next
     ).__updatePropertyAd();
   }
-  async createPropertyPostPrice() {
-    return await new PortalAds(
-      this.req,
-      this.res,
-      this.next
-    ).__createPropertyPostPrice();
-  }
+  // async createPropertyPostPrice() {
+  //   return await new PortalAds(
+  //     this.req,
+  //     this.res,
+  //     this.next
+  //   ).__createPropertyPostPrice();
+  // }
 
   async getPropertyPostPrice() {
     return await new PortalAds(
