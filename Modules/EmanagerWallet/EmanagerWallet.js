@@ -7,6 +7,8 @@ const {
   stringIsEqual,
   isValidMongoObjectId,
 } = require("../../helpers/validators");
+
+const { isHashedString } = require("../../helpers/tools");
 const crypto = require("crypto"); 
 const EmanagerUserWallet = require("../../model/emanager-user-wallet");
 const EmanagerUserWalletSession = require("../../model/emanager-user-wallet-session");
@@ -17,10 +19,12 @@ const QpayWalletSessionToken = require("../../model/qpay-wallet-session-token");
 const QpayWallet = require("../QpayWallet/QpayWallet");
 const EmanagerEstateWallet = require("../../model/emanager-estate-wallet");
 const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
-const { generateWalletToken } = require("../../utils/tokenGenerator");
-
-class EmanagerWallet {
-  constructor(req, res) {
+const { generateWalletToken } = require("../../utils/tokenGenerator"); 
+const responseBody = require("../../helpers/responseBody"); 
+const scheamaTools = require("../../helpers/scheamaTools");
+const qpaypassword = 1994
+class EmanagerWallet{
+  constructor(req, res) { 
     this.req = req;
     this.res = res;
     this.apiClient = new QpayService("", "", "");
@@ -515,8 +519,7 @@ class EmanagerWallet {
         success: false,
         message: "Sorry!!...You are not Authorized",
       });
-    }
-
+    } 
     const QpayWalletSession = await this.__checkQpayWalletSession();
     if (!isValidMongoObject(QpayWalletSession)) {
       this.res.statusCode = 500;
@@ -532,13 +535,13 @@ class EmanagerWallet {
       );
 
     if (qpaywalletBalance.status != 200) {
-      if (walletService.response && walletService.response.status === 401) {
+      if (qpaywalletBalance.response && qpaywalletBalance.response.status === 401) {
         await this.__inValidateQpayWalletSessionToken(this.res.user);
       }
       this.res.statusCode = 500;
       return this.res.json({
         success: false,
-        message: "Internal Server Error",
+        message: "Internal Server Error, please try again",
       });
     }
     if (
@@ -565,7 +568,7 @@ class EmanagerWallet {
       this.res.statusCode = 500;
       return this.res.json({
         success: false,
-        message: "Internal Server Error",
+        message: "Internal Server Error, please try again",
       });
     } else {
       return this.res.json({
@@ -812,18 +815,22 @@ class EmanagerWallet {
         message: "Provide a valid description",
       });
     }
-    if (isNaN(password) || password.length < 2) {
+    if (!isValidPassword(password)) {
       this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Provide a valid password",
       });
     }
+    const existingPassword = await this.__findPassword(password,null,this.res.user._id)
+    if(!isValidMongoObject(existingPassword)) {
+      return existingPassword
+    }
     const newBankTransfer = await this.__initiateEstateTransaction(
       `https://app.scanpay.ng/api/v2/transaction/account/withdraw-funds`,
       {
         amount: amount,
-        pin: password,
+        pin: qpaypassword,
         account_number: accountNumber,
         bank_code: bankCode,
         description: description,
@@ -849,7 +856,7 @@ class EmanagerWallet {
     const serviceType = this.req.body.serviceType || "";
     const pin = this.req.body.pin || "";
     const saveAsBeneficiary = this.req.body.saveAsBeneficiary || "";
-
+ 
     if (!isNaN(smartcardNumber) && smartcardNumber.length < 7) {
       return this.res.json({
         success: false,
@@ -891,6 +898,10 @@ class EmanagerWallet {
         message: "Provide a valid pin",
       });
     }
+    const existingPassword = await this.__findPassword(pin,null,this.res.user._id)
+    if(!isValidMongoObject(existingPassword)) {
+      return existingPassword
+    }
 
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/multichoice/request`,
@@ -900,7 +911,7 @@ class EmanagerWallet {
         product_monthsPaidFor: productMonthsPaidFor,
         smartcard_number: smartcardNumber,
         service_type: serviceType,
-        pin,
+        pin:qpaypassword,
         save_as_beneficiary: true,
       },
       "CableTV subscription"
@@ -967,7 +978,10 @@ class EmanagerWallet {
         message: "Provide a valid pin",
       });
     }
-
+    const existingPassword = await this.__findPassword(pin,null,this.res.user._id)
+    if(!isValidMongoObject(existingPassword)) {
+      return existingPassword
+    }
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/epin/request`,
       {
@@ -976,7 +990,7 @@ class EmanagerWallet {
         numberOfPins: numberOfPins,
         pinValue: pinValue,
         service_type: serviceType,
-        pin,
+        pin:qpaypassword,
         // save_as_beneficiary: true,
       },
       "epin request"
@@ -1034,6 +1048,10 @@ class EmanagerWallet {
         message: "Provide a valid pin",
       });
     }
+    const existingPassword = await this.__findPassword(pin,null,this.res.user._id)
+    if(!isValidMongoObject(existingPassword)) {
+      return existingPassword
+    }
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/epin/request`,
       {
@@ -1041,7 +1059,7 @@ class EmanagerWallet {
         amount,
         service_type: serviceType,
         plan,
-        pin,
+        pin:qpaypassword,
         save_as_beneficiary: true,
       },
       "airtime request"
@@ -1101,6 +1119,12 @@ class EmanagerWallet {
       });
     }
 
+    
+    const existingPassword = await this.__findPassword(pin,null,this.res.user._id)
+    if(!isValidMongoObject(existingPassword)) {
+      return existingPassword
+    }
+
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/databundle/request`,
       {
@@ -1108,7 +1132,7 @@ class EmanagerWallet {
         amount,
         service_type: serviceType,
         datacode,
-        pin,
+        pin:qpaypassword,
         save_as_beneficiary: true,
       },
       "databundle request"
@@ -1161,6 +1185,10 @@ class EmanagerWallet {
     }
     
  
+    const existingPassword = await this.__findPassword(pin,null,this.res.user._id)
+    if(!isValidMongoObject(existingPassword)) {
+      return existingPassword
+    }
 
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/electricity/request`,
@@ -1168,7 +1196,7 @@ class EmanagerWallet {
         account_number: accountNumber,
         amount,
         service_type: serviceType,
-        pin,
+        pin:qpaypassword,
         // save_as_beneficiary: true,
       },
       "electricity request"
@@ -1213,7 +1241,7 @@ class EmanagerWallet {
     if (!isValidMongoObject(foundWalletToken)) {
       const emanagerWalletLogin = await this.qpayWallet.__walletLogin({
         phone: "+2348132331814",
-        pin: "1994",
+        pin: qpaypassword,
       });
       if (
         emanagerWalletLogin.data &&
@@ -1273,7 +1301,7 @@ class EmanagerWallet {
     if (!isValidMongoObject(foundWalletToken)) {
       const emanagerWalletLogin = await this.qpayWallet.__walletLogin({
         phone: "+2348132331814",
-        pin: "1994",
+        pin: qpaypassword,
       });
       if (
         emanagerWalletLogin.data &&
@@ -1452,6 +1480,33 @@ class EmanagerWallet {
     });
 
     return foundWalletToken;
+  }
+  
+  async __findPassword(password, type, ownerId) {
+    const createdOn = new Date();
+
+    const query = {
+      status: 1,
+      ownerId,
+    }; 
+    // if (!isNaN(type)) {
+    //   query.ownerType = type;
+    // }
+    const existingPassword = await scheamaTools.findPassword(query); 
+    if (!existingPassword) {
+      return responseBody.notFoundResponse(
+        this.res,
+        "password not found in the system, try again with the correct passeord"
+      );
+    }
+    if (!isHashedString(password, existingPassword.hashedForm)) {
+      return responseBody.notFoundResponse(
+        this.res,
+        "incorrect password, try again with the correct passeord"
+      );
+    }
+
+    return existingPassword;
   }
 }
 module.exports = EmanagerWallet;
