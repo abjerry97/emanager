@@ -253,6 +253,22 @@ function portalDefaultRoute() {
     return new Controller(req, res, next).updatePropertyPostPrice();
   });
 
+  
+  router.route("/property/checkout/:checkoutId/confirm").put(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).confirmPostAdCheckout();
+  });
+  router.route("/property/checkout/:checkoutId/cancel").put(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).cancelPostAdCheckout();
+  });
+  router.route("/property/:propertyAdId/checkout").post(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).createPostAdCheckout();
+  });
+  
+  router.route("/property/:propertyAdId/checkout").get(isPortalUser,(req, res, next) => {
+    return new Controller(req, res, next).getPostAdCheckout();
+  });
+  
+  
   router.route("/user/properties").get(isPortalUser,(req, res, next) => {
     return new Controller(req, res, next).getUserProperties();
   });

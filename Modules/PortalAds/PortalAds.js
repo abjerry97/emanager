@@ -24,6 +24,7 @@ const Email = require("../../model/email");
 const Name = require("../../model/name");
 const PropertyAdPostPrice = require("../../model/property-ad-post-price");
 const PropertyAdPayment = require("../../model/property-ad-payment");
+const PropertyAdCheckout = require("../../model/property-ad-checkout");
 class PortalAds {
   constructor(req, res, next) {
     this.req = req;
@@ -221,6 +222,272 @@ class PortalAds {
     return this.res.json({
       success: true,
       message: " Ad Created Succesfully",
+      property: addProperty,
+    });
+  }
+  async __createPostAdCheckout() {
+    const createdOn = new Date();
+    const user = this.res.user || {};
+    const userId = user._id;
+    if (!isValidMongoObjectId(userId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid user",
+      });
+    }
+    const { amount = "", months = "" } = this.req.body || {};
+    const { propertyAdId = "" } = this.req.params || {};
+
+    if (!isValidMongoObjectId(propertyAdId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid property Ad Id",
+      });
+    }
+
+    const existingPropertyAd = await PropertyAd.findOne({
+      status: 1,
+      _id: propertyAdId,
+    });
+
+    if (!isValidMongoObject(existingPropertyAd)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...property Ad not found",
+      });
+    }
+    if (isNaN(amount) || amount < 100) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message:
+          "invalid amount specified, please Provide a valid property amount",
+      });
+    }
+    if (isNaN(months) || months < 0) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message:
+          "invalid number of months specified, please Provide a valid value",
+      });
+    }
+    const unformattedownerPhone =
+      user.phoneNumbers && Array.isArray(user.phoneNumbers)
+        ? user.phoneNumbers.find((phoneNumbers) =>
+            stringIsEqual(!!phoneNumbers.isPrimary && phoneNumbers.isPrimary, 1)
+          )
+        : {};
+
+    const ownerPhone =
+      `${unformattedownerPhone?.countryCode}` +
+      `${unformattedownerPhone.value}`;
+    const ownerEmail =
+      user.emails && Array.isArray(user.emails)
+        ? user.emails.find((email) =>
+            stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
+          ).value
+        : "";
+    const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
+      status: 1,
+      ownerId: userId,
+      propertyId: existingPropertyAd.propertyId,
+      amount: amount || 0,
+      months: months || 0,
+      propertyAdId,
+      phonenumber: ownerPhone,
+      email: ownerEmail,
+      createdOn,
+      createdBy: userId,
+    });
+
+    if (!isValidMongoObject(newlyCreatedPropertyAdCheckout)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Sorry! error while creating  Property Checkout",
+      });
+    }
+
+    await newlyCreatedPropertyAdCheckout.save();
+    return this.res.json({
+      success: true,
+      message: " Property Checkout Succesfully",
+      checkout: newlyCreatedPropertyAdCheckout,
+    });
+  }
+
+  async __getPostAdCheckout() {
+    const createdOn = new Date();
+    const user = this.res.user || {};
+    const userId = user._id;
+    const { propertyAdId } = this.req.params || "";
+    if (!isValidMongoObjectId(propertyAdId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid property Ad Id",
+      });
+    }
+    if (!isValidMongoObjectId(userId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid user",
+      });
+    }
+
+    const existingPropertyAd = await PropertyAd.findOne({
+      status: 1,
+      _id: propertyAdId,
+    });
+
+    if (!isValidMongoObject(existingPropertyAd)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...property Ad not found",
+      });
+    }
+
+    const existingPropertyAdCheckout = await PropertyAdCheckout.findOne({
+      status: 1,
+      propertyAdId,
+      createdBy: userId,
+    });
+
+    if (!isValidMongoObject(existingPropertyAdCheckout)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message:
+          "property Ad not found Checkout, proceed to creating new payment",
+      });
+    }
+
+    return this.res.json({
+      success: true,
+      message: " Property Checkout gotten Succesfully",
+      checkout: existingPropertyAdCheckout,
+    });
+  }
+
+  async __confirmPostAdCheckout() {
+    const createdOn = new Date();
+    const user = this.res.user || {};
+    const userId = user._id;
+    const confirm = this.req.query["success"] || "";
+    const { checkoutId } = this.req.params || "";
+    if (!isValidMongoObjectId(checkoutId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid checkout Id",
+      });
+    }
+    if (!isValidMongoObjectId(userId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid user",
+      });
+    }
+
+    let existingPropertyAdCheckout = await PropertyAdCheckout.findOne({
+      status: 1,
+      _id: checkoutId,
+    });
+
+    if (!isValidMongoObject(existingPropertyAdCheckout)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...property Ad Checkout not found",
+      });
+    }
+    if (!stringIsEqual(confirm, "true") && !stringIsEqual(confirm, "false")) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "Provide a valid confirm params",
+      });
+    }
+
+    try {
+      existingPropertyAdCheckout = await PropertyAdCheckout.findOneAndUpdate(
+        {
+          status: 1,
+          _id: checkoutId,
+        },
+        {
+          $set: { paidStatus: true },
+          $push: {},
+        },
+        { new: true }
+      );
+    } catch (error) {}
+
+    return this.res.json({
+      success: true,
+      message: " Property Checkout Succesfully",
+      checkout: existingPropertyAdCheckout,
+    });
+  }
+
+  async __cancelPostAdCheckout() {
+    const createdOn = new Date();
+    const user = this.res.user || {};
+    const userId = user._id;
+    const { checkoutId } = this.req.params || "";
+    if (!isValidMongoObjectId(checkoutId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid checkout Id",
+      });
+    }
+    if (!isValidMongoObjectId(userId)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...Invalid user",
+      });
+    }
+
+    let existingPropertyAdCheckout = await PropertyAdCheckout.findOne({
+      status: 1,
+      _id: checkoutId,
+    });
+
+    if (!isValidMongoObject(existingPropertyAdCheckout)) {
+      this.res.statusCode = 401;
+      return this.res.json({
+        success: false,
+        message: "sorry!...property Ad Checkout not found",
+      });
+    }
+
+    try {
+      existingPropertyAdCheckout = await PropertyAdCheckout.findOneAndUpdate(
+        {
+          status: 1,
+          _id: checkoutId,
+        },
+        {
+          $set: { status: 0 },
+          $push: {},
+        },
+        { new: true }
+      );
+    } catch (error) {}
+
+    return this.res.json({
+      success: true,
+      message: " Property Checkout canceled Succesfully",
+      checkout: existingPropertyAdCheckout,
     });
   }
 
@@ -1155,10 +1422,10 @@ class PortalAds {
   //     adPrice: newPropertyAdPostPrice,
   //   });
   // }
-  
+
   async __getPropertyPostPrice() {
     const createdOn = new Date();
- 
+
     const existingPropertyAdPostPrice = await PropertyAdPostPrice.findOne({
       status: 1,
     });
@@ -1170,8 +1437,6 @@ class PortalAds {
         message: "Property Ad Price not yet created",
       });
     }
-
-   
 
     return this.res.json({
       success: true,
@@ -1201,9 +1466,8 @@ class PortalAds {
       });
     }
 
- 
-    const newAmount = this.req.body.amount; 
- 
+    const newAmount = this.req.body.amount;
+
     if (isNaN(newAmount)) {
       this.res.statusCode = 400;
       return this.res.json({
@@ -1211,7 +1475,7 @@ class PortalAds {
         message: "Provide a valid new Amount",
       });
     }
- 
+
     const existingPropertyAdPostPrice = await PropertyAdPostPrice.findOne({
       status: 1,
     });
@@ -1241,7 +1505,7 @@ class PortalAds {
         adPrice: newPropertyAdPostPrice,
       });
     }
- 
+
     try {
       const existingPropertyAdPostPrice = await PropertyAdPostPrice.updateMany(
         {
@@ -1256,7 +1520,6 @@ class PortalAds {
     } catch (error) {
       console.log(error);
     }
-   
 
     const newPropertyAdPostPrice = await new PropertyAdPostPrice({
       status: 1, //0:deleted,1:active
@@ -1390,7 +1653,9 @@ class PortalAds {
 
     return this.res.json({
       success: true,
-      message: `Property ${stringIsEqual(isApproved, "true")?`approved` : `disapproved` }  Succesfully`,
+      message: `Property ${
+        stringIsEqual(isApproved, "true") ? `approved` : `disapproved`
+      }  Succesfully`,
     });
   }
 }

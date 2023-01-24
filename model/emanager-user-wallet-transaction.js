@@ -17,19 +17,29 @@ const defaultBoolean = {
 };
 const emanagerUserWalletTransactionSchemaObject = {
   status: defaultString, //0:deleted,1:
-  type: defaultString,
+  type: defaultString,// credit,debit 
+  kind: defaultString,//0:wallet to wallet,1:wallet to external,2: external to emanager wallet  
   name: defaultString,
-  ownerName: defaultString,
+  destName: defaultString,
+  isSuccesful:defaultBoolean,
+  srcName: defaultString,
   isEstate: defaultString,
   estateId: defaultString,
-  amount: defaultString,
-  isDebit: defaultBoolean,
+  amount: defaultString, 
   walletId: defaultString,
+  destId: defaultString,
+  srcId: defaultString,
   userId: defaultString,
   adminId: defaultString,
   message: defaultString,
   statusCode: defaultString,
   serverStatusCode: defaultString,
+  description: defaultString,
+  account_number: defaultString,
+  bank_code: defaultString,
+  service_type: defaultString,
+  datacode: defaultString,
+  phone: defaultString,
   serverStatus: defaultString,
   transactionStatus: defaultString,
   transactionReference: defaultString,

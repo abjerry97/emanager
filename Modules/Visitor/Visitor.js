@@ -367,6 +367,11 @@ class Visitor {
       createdBy: userId,
       estateId,
     });
+    randomCode.createdOn = createdOn;
+    randomCode.expiresOn = new Date(createdOn.getTime() + 9000000000);
+    randomCode.checkedOn = ""
+    // 900000
+    // 900000
     switch (Number(type)) {
       case 0: {
         const companyName = await this.__createGuestCompanyName(
@@ -443,9 +448,7 @@ class Visitor {
         });
       }
     }
-    randomCode.createdOn = createdOn;
-    randomCode.expiresOn = new Date(createdOn.getTime() + 900000);
-    // 900000
+ 
     randomCode.save();
 
     return this.res.json({
