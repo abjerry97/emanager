@@ -7,7 +7,9 @@ const {
   stringIsEqual,
   isValidMongoObjectId,
 } = require("../../helpers/validators");
-const crypto = require("crypto"); 
+
+const { isHashedString } = require("../../helpers/tools");
+const crypto = require("crypto");
 const EmanagerUserWallet = require("../../model/emanager-user-wallet");
 const EmanagerUserWalletSession = require("../../model/emanager-user-wallet-session");
 const EmanagerUserWalletBalance = require("../../model/emanager-user-wallet-balance");
@@ -18,7 +20,9 @@ const QpayWallet = require("../QpayWallet/QpayWallet");
 const EmanagerEstateWallet = require("../../model/emanager-estate-wallet");
 const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
 const { generateWalletToken } = require("../../utils/tokenGenerator");
-
+const responseBody = require("../../helpers/responseBody");
+const scheamaTools = require("../../helpers/scheamaTools");
+const qpaypassword = 1994;
 class EmanagerWallet {
   constructor(req, res) {
     this.req = req;
@@ -114,6 +118,48 @@ class EmanagerWallet {
     await newlyCreatedWalletBalance.save();
     await newlyCreatedEstateWallet.save();
     return newlyCreatedEstateWallet;
+  }
+
+  async __depositWalletAccount(data = {}) {
+    const createdOn = new Date();
+
+    const newlyCreatedUserWalletTransaction = await new UserWalletTransaction({ 
+      ...data,
+      type: "credit",
+      createdOn: createdOn, 
+      status: 1, //0:deleted,1:
+    });
+    await newlyCreatedUserWalletTransaction.save();
+
+    if (!isValidMongoObject(newlyCreatedUserWalletTransaction)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Unable to User Wallet Transaction, Please try again",
+      });
+    }
+    return newlyCreatedUserWalletTransaction;
+  }
+  async __withdrawFromWalletAccount(data = {}) {
+    const createdOn = new Date();
+
+    const newlyCreatedUserWalletTransaction = await new UserWalletTransaction({
+    
+      ...data,
+      type: "debit",
+      createdOn: createdOn,
+      status: 1, //0:deleted,1:
+    });
+    await newlyCreatedUserWalletTransaction.save();
+
+    if (!isValidMongoObject(newlyCreatedUserWalletTransaction)) {
+      this.res.statusCode = 500;
+      return this.res.json({
+        success: false,
+        message: "Unable to User Wallet Transaction, Please try again",
+      });
+    }
+    return newlyCreatedUserWalletTransaction;
   }
 
   async __walletLogin(user) {
@@ -315,7 +361,6 @@ class EmanagerWallet {
 
         return newlyCreatedEmanagerUserWalletBalance;
       }
- 
     }
     return emanagerUserWalletBalance;
   }
@@ -438,7 +483,7 @@ class EmanagerWallet {
       { ...payload, from_emanager: true },
       QpayWalletHeader(QpayWalletSession.jwt)
     ).apiGetRequest();
-    // console.log(walletService) 
+    // console.log(walletService)
     if (walletService.status != 200) {
       if (walletService.response && walletService.response.status === 401) {
         await this.__inValidateQpayWalletSessionToken(this.res.user);
@@ -488,7 +533,7 @@ class EmanagerWallet {
       url,
       { ...payload, from_emanager: true },
       QpayWalletHeader(QpayWalletSession.jwt)
-    ).apiPostRequest(); 
+    ).apiPostRequest();
     if (walletService.status != 200) {
       if (walletService.response && walletService.response.status === 401) {
         await this.__inValidateQpayWalletSessionToken(this.res.user);
@@ -507,7 +552,7 @@ class EmanagerWallet {
       });
     }
   }
-  async __makeQpayWalletTransaction(url, payload, message, userBalance) {
+  async __makeQpayWalletTransaction(url, payload, message, userBalance,walletId) {
     const createdOn = new Date();
     if (!isValidMongoObject(this.res.user)) {
       this.res.statusCode = 401;
@@ -516,7 +561,6 @@ class EmanagerWallet {
         message: "Sorry!!...You are not Authorized",
       });
     }
-
     const QpayWalletSession = await this.__checkQpayWalletSession();
     if (!isValidMongoObject(QpayWalletSession)) {
       this.res.statusCode = 500;
@@ -532,26 +576,29 @@ class EmanagerWallet {
       );
 
     if (qpaywalletBalance.status != 200) {
-      if (walletService.response && walletService.response.status === 401) {
+      if (
+        qpaywalletBalance.response &&
+        qpaywalletBalance.response.status === 401
+      ) {
         await this.__inValidateQpayWalletSessionToken(this.res.user);
       }
       this.res.statusCode = 500;
       return this.res.json({
         success: false,
-        message: "Internal Server Error",
+        message: "Internal Server Error, please try again",
       });
     }
-    if (
-      qpaywalletBalance?.data?.data?.balance < 550 ||
-      qpaywalletBalance?.data?.data?.balance < userBalance
-    ) {
-      this.res.statusCode = 500;
-      return this.res.json({
-        success: false,
-        message:
-          "Transaction cannot be completed at this time, please try again",
-      });
-    }
+    // if (
+    //   qpaywalletBalance?.data?.data?.balance < 550 ||
+    //   qpaywalletBalance?.data?.data?.balance < userBalance
+    // ) {
+    //   this.res.statusCode = 500;
+    //   return this.res.json({
+    //     success: false,
+    //     message:
+    //       "Transaction cannot be completed at this time, please try again",
+    //   });
+    // }
     const walletService = await new QpayService(
       url,
       { ...payload, from_emanager: true },
@@ -560,14 +607,38 @@ class EmanagerWallet {
     if (walletService.status != 200) {
       if (walletService.response && walletService.response.status === 401) {
         await this.__inValidateQpayWalletSessionToken(this.res.user);
-      }
+      } 
+      const {name,}=  this.res.user
+      const newWithdrawRequest = await this.__withdrawFromWalletAccount({
+        isSuccesful: false,
+        name: name.value,
+        statusCode: walletService.response.status,
+        serverStatus: walletService.response.data.status,walletId,
+        ...walletService.response.data,...payload
+       
+      });
 
+      if (!isValidMongoObject(newWithdrawRequest)) {
+        return newWithdrawRequest;
+      }
       this.res.statusCode = 500;
       return this.res.json({
         success: false,
-        message: "Internal Server Error",
+        message: "Internal Server Error, please try again",
       });
     } else {
+      const newWithdrawRequest = await this.__withdrawFromWalletAccount({
+        isSuccesful: true,
+        ...walletService.response, 
+        name: name.value,
+        statusCode: walletService.response.status,
+        serverStatus: walletService.response.data.status,walletId,
+        ...walletService.response.data,...payload
+      });
+      if (!isValidMongoObject(newWithdrawRequest)) {
+        return newWithdrawRequest;
+      }
+
       return this.res.json({
         success: true,
         message: `${message} success`,
@@ -677,9 +748,8 @@ class EmanagerWallet {
         service_type: serviceType,
       },
       "Epin bundle list "
-    ); 
+    );
     return newProviderRequest;
-
   }
 
   async __getBanks() {
@@ -757,21 +827,22 @@ class EmanagerWallet {
         message: "Unable to retrieve user wallet balance, try again",
       });
     }
-
-    if (Number(payload.amount) > Number(checkUserWalletBalance.value)) {
-      this.res.statusCode = 409;
-      return this.res.json({
-        success: false,
-        message:
-          "You don't have sufficient balance to fund this transaction,fund wallet and try again",
-      });
-    }
+ 
+    
+    // if (Number(payload.amount) > Number(checkUserWalletBalance.value)) {
+    //   this.res.statusCode = 409;
+    //   return this.res.json({
+    //     success: false,
+    //     message:
+    //       "You don't have sufficient balance to fund this transaction,fund wallet and try again",
+    //   });
+    // }
 
     const newProviderRequest = await this.__makeQpayWalletTransaction(
       url,
       payload,
       message,
-      checkUserWalletBalance?.value
+      checkUserWalletBalance?.value,checkUserWalletBalance.walletId
     );
     return newProviderRequest;
   }
@@ -812,18 +883,26 @@ class EmanagerWallet {
         message: "Provide a valid description",
       });
     }
-    if (isNaN(password) || password.length < 2) {
+    if (!isValidPassword(password)) {
       this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Provide a valid password",
       });
     }
+    const existingPassword = await this.__findPassword(
+      password,
+      null,
+      this.res.user._id
+    );
+    if (!isValidMongoObject(existingPassword)) {
+      return existingPassword;
+    }
     const newBankTransfer = await this.__initiateEstateTransaction(
       `https://app.scanpay.ng/api/v2/transaction/account/withdraw-funds`,
       {
         amount: amount,
-        pin: password,
+        pin: qpaypassword,
         account_number: accountNumber,
         bank_code: bankCode,
         description: description,
@@ -891,6 +970,14 @@ class EmanagerWallet {
         message: "Provide a valid pin",
       });
     }
+    const existingPassword = await this.__findPassword(
+      pin,
+      null,
+      this.res.user._id
+    );
+    if (!isValidMongoObject(existingPassword)) {
+      return existingPassword;
+    }
 
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/multichoice/request`,
@@ -900,7 +987,7 @@ class EmanagerWallet {
         product_monthsPaidFor: productMonthsPaidFor,
         smartcard_number: smartcardNumber,
         service_type: serviceType,
-        pin,
+        pin: qpaypassword,
         save_as_beneficiary: true,
       },
       "CableTV subscription"
@@ -967,7 +1054,14 @@ class EmanagerWallet {
         message: "Provide a valid pin",
       });
     }
-
+    const existingPassword = await this.__findPassword(
+      pin,
+      null,
+      this.res.user._id
+    );
+    if (!isValidMongoObject(existingPassword)) {
+      return existingPassword;
+    }
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/epin/request`,
       {
@@ -976,7 +1070,7 @@ class EmanagerWallet {
         numberOfPins: numberOfPins,
         pinValue: pinValue,
         service_type: serviceType,
-        pin,
+        pin: qpaypassword,
         // save_as_beneficiary: true,
       },
       "epin request"
@@ -1034,6 +1128,14 @@ class EmanagerWallet {
         message: "Provide a valid pin",
       });
     }
+    const existingPassword = await this.__findPassword(
+      pin,
+      null,
+      this.res.user._id
+    );
+    if (!isValidMongoObject(existingPassword)) {
+      return existingPassword;
+    }
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/epin/request`,
       {
@@ -1041,7 +1143,7 @@ class EmanagerWallet {
         amount,
         service_type: serviceType,
         plan,
-        pin,
+        pin: qpaypassword,
         save_as_beneficiary: true,
       },
       "airtime request"
@@ -1101,6 +1203,15 @@ class EmanagerWallet {
       });
     }
 
+    const existingPassword = await this.__findPassword(
+      pin,
+      null,
+      this.res.user._id
+    );
+    if (!isValidMongoObject(existingPassword)) {
+      return existingPassword;
+    }
+
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/databundle/request`,
       {
@@ -1108,7 +1219,7 @@ class EmanagerWallet {
         amount,
         service_type: serviceType,
         datacode,
-        pin,
+        pin: qpaypassword,
         save_as_beneficiary: true,
       },
       "databundle request"
@@ -1159,8 +1270,15 @@ class EmanagerWallet {
         message: "Provide a valid pin",
       });
     }
-    
- 
+
+    const existingPassword = await this.__findPassword(
+      pin,
+      null,
+      this.res.user._id
+    );
+    if (!isValidMongoObject(existingPassword)) {
+      return existingPassword;
+    }
 
     const walletService = await this.__initiateUserTransaction(
       `https://app.scanpay.ng/api/v1/services/electricity/request`,
@@ -1168,7 +1286,7 @@ class EmanagerWallet {
         account_number: accountNumber,
         amount,
         service_type: serviceType,
-        pin,
+        pin: qpaypassword,
         // save_as_beneficiary: true,
       },
       "electricity request"
@@ -1213,7 +1331,7 @@ class EmanagerWallet {
     if (!isValidMongoObject(foundWalletToken)) {
       const emanagerWalletLogin = await this.qpayWallet.__walletLogin({
         phone: "+2348132331814",
-        pin: "1994",
+        pin: qpaypassword,
       });
       if (
         emanagerWalletLogin.data &&
@@ -1273,7 +1391,7 @@ class EmanagerWallet {
     if (!isValidMongoObject(foundWalletToken)) {
       const emanagerWalletLogin = await this.qpayWallet.__walletLogin({
         phone: "+2348132331814",
-        pin: "1994",
+        pin: qpaypassword,
       });
       if (
         emanagerWalletLogin.data &&
@@ -1452,6 +1570,33 @@ class EmanagerWallet {
     });
 
     return foundWalletToken;
+  }
+
+  async __findPassword(password, type, ownerId) {
+    const createdOn = new Date();
+
+    const query = {
+      status: 1,
+      ownerId,
+    };
+    // if (!isNaN(type)) {
+    //   query.ownerType = type;
+    // }
+    const existingPassword = await scheamaTools.findPassword(query);
+    if (!existingPassword) {
+      return responseBody.notFoundResponse(
+        this.res,
+        "password not found in the system, try again with the correct passeord"
+      );
+    }
+    if (!isHashedString(password, existingPassword.hashedForm)) {
+      return responseBody.notFoundResponse(
+        this.res,
+        "incorrect password, try again with the correct passeord"
+      );
+    }
+
+    return existingPassword;
   }
 }
 module.exports = EmanagerWallet;

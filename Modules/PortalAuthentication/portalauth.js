@@ -686,8 +686,7 @@ if(stringIsEqual(user.isAdmin, "1")){
     );
     if (!isValidMongoObject(emanagerUserWalletlogin)) {
       return emanagerUserWalletlogin;
-    }}
-    console.log("emanagerUserWalletlogin",emanagerUserWalletlogin)
+    }} 
     return this.res.json({
       success: true,
       message: "User Login Successfully",
