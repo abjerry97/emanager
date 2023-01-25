@@ -62,7 +62,12 @@ class Authentication extends Estate {
 
   async __createName(name, type, isAdmin) {
     const createdOn = new Date();
-
+    if(name.length <3){
+      return responseBody.ErrorResponse(
+        this.res,
+        "Provide a valid Name"
+      );
+    }
     const newUserName = await scheamaTools.createName({
       status: 1, //0:inactive,1:active
       value: name,
@@ -124,8 +129,7 @@ class Authentication extends Estate {
         this.res,
         "You need to provide a valid id"
       );
-    }
-
+    } 
     const name = await this.__createName(this.req.body.name, 2);
 
     if (!isValidMongoObject(name)) {
@@ -427,7 +431,12 @@ if(!this.res.user.isVerified){
   async __createPhonenumber(phone, type, isPrimary, isAdmin) {
     const createdOn = new Date();
     const phonenumber = phone;
-
+    if(!isValidPhonenumber(phone)){
+      return responseBody.ErrorResponse(
+        this.res,
+        "Provide a valid phonenumber"
+      );
+    }
     const formattedPhonenumber = formatPhonenumber(phonenumber);
     const existingPhoneneumber = await this.__checkExistingPhoneNumber(
       phone,
