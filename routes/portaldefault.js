@@ -254,7 +254,7 @@ function portalDefaultRoute() {
   });
 
   
-  router.route("/property/checkout").post(isPortalUser,(req, res, next) => {
+  router.route("/property/checkout").post((req, res, next) => {
     return new Controller(req, res, next).confirmPostAdCheckout();
   }); 
   

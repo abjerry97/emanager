@@ -251,6 +251,7 @@ class PortalAds {
           userId: event.userId,
           referrer: event.referrer,
           paystackResponse: event,
+          createdOn
         });
         if (isValidMongoObject(newlyCreatedPropertyAdCheckout)) {
           await existingPropertyAdCheckout.save();
