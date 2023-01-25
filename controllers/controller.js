@@ -963,20 +963,7 @@ class Controller {
       this.next
     ).__createPostAd();
   }
-  async createPostAdCheckout() {
-    return await new PortalAds(
-      this.req,
-      this.res,
-      this.next
-    ).__createPostAdCheckout();
-  }
-  async getPostAdCheckout() {
-    return await new PortalAds(
-      this.req,
-      this.res,
-      this.next
-    ).__getPostAdCheckout();
-  }
+ 
   async confirmPostAdCheckout() {
     return await new PortalAds(
       this.req,
@@ -984,13 +971,7 @@ class Controller {
       this.next
     ).__confirmPostAdCheckout();
   }
-  async cancelPostAdCheckout() {
-    return await new PortalAds(
-      this.req,
-      this.res,
-      this.next
-    ).__cancelPostAdCheckout();
-  }
+ 
   
   async findAllPostAd() {
     return await new PortalAds(
