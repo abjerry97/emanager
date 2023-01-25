@@ -24,10 +24,14 @@ setInterval(verifyEmail, 1000);
     .get(async (req, res, next) => { 
       res.send("<h1> Welcome to E manager resident </h1>");
     });
-
-  router.route("/info").get(isAuth, travelMode, (req, res, next) => {
-    return new Controller(req, res, next).userInfo();
-  });
+    
+    router.route("/my/webhook/url").post( (req, res, next) => {
+      console.log(req.body)
+      res.json({"success":true})
+    });
+    router.route("/info").get(isAuth, travelMode, (req, res, next) => {
+      return new Controller(req, res, next).userInfo();
+    });
  
 
   router.route("/estate").post(validateEstateName,(req, res, next) => {
