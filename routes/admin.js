@@ -175,18 +175,35 @@ function adminRoute(isAdminStatus) {
     router.route("/houses/:houseId/delete").delete(isAdmin, (req, res, next) => {
       return new Controller(req, res, next).deleteEstateHouse();
     });
-    
-    // special
-
-    router.route("/admin/user/update").put(isAdmin, (req, res, next) => {
-      return new Controller(req, res, next).updateAdminUser();
+    router
+    .route("/wallet/balance")
+    .get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).getWalletBalance();
+    }); 
+    router.route("/estate/wallet/transaction").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).viewEmanagerEstateTransaction();
     });
-
-    router.route("/user/user/update").put(isAdmin, (req, res, next) => {
-      return new Controller(req, res, next).updateAllUser();
+  
+    router.route("/estate/wallet/transaction/:transactionId").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).viewParticularEmanagerEstateTransaction();
     });
-
-    // router.use("/guest", guestRoute);
+  
+     
+    router.route("/estate/wallet/transaction").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).viewEmanagerEstateTransaction();
+    });
+  
+    router.route("/banks").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).getBanks();
+    });
+    router.route("/transaction/account/verify").post(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).verifyBankAccount();
+    });
+  
+    router.route("/transaction/account/transfer").post(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).__transferFundsFromEstateWalletToBankAccount();
+    });
+  
   }
   return router;
 }

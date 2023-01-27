@@ -483,9 +483,9 @@ class Admin extends Authentication {
       return foundUser;
     }
 
-    if(!foundUser.isVerified){
-      return responseBody.ErrorResponse(this.res, "Account not yet verified");
-    }
+    // if(!foundUser.isVerified){
+    //   return responseBody.ErrorResponse(this.res, "Account not yet verified");
+    // }
     const foundUserEstate = await UserEstate.findOne({
       status: 1,
       estateId,
