@@ -26,6 +26,7 @@ const Name = require("../../model/name");
 const PropertyAdPostPrice = require("../../model/property-ad-post-price");
 const PropertyAdPayment = require("../../model/property-ad-payment");
 const PropertyAdCheckout = require("../../model/property-ad-checkout");
+const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
 class PortalAds {
   constructor(req, res, next) {
     this.req = req;
@@ -288,6 +289,23 @@ class PortalAds {
             },
             { new: true }
           );
+
+
+
+
+          const newAdPaymentTransaction =  await new UserWalletTransaction({
+            status:1, 
+            type: "propertyAd", 
+            name: event.name,
+            amount: event.amount,
+            isDebit: false,
+            ownerId: event.userId,
+            message: `Add payment for + ${existingPropertyAd.title}`,    
+            createdOn,
+          }) 
+
+
+          await newAdPaymentTransaction.save()
         }
       } catch (error) {
         console.log(error);

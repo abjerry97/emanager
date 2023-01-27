@@ -324,11 +324,7 @@ function portalDefaultRoute() {
     router.route("/estate/wallet/transaction/:transactionId").get(isPortalUser, (req, res, next) => {
       return new Controller(req, res, next).viewParticularEmanagerEstateTransaction();
     });
-  
-     
-    router.route("/estate/wallet/transaction").get(isPortalUser, (req, res, next) => {
-      return new Controller(req, res, next).viewEmanagerEstateTransaction();
-    });
+   
   
     router.route("/banks").get(isPortalUser, (req, res, next) => {
       return new Controller(req, res, next).getBanks();
