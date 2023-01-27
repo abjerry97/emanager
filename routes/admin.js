@@ -115,20 +115,42 @@ function adminRoute(isAdminStatus) {
     router.route("/forum/create").post(isAdmin, (req, res, next) => {
       return new Controller(req, res, next).adminCreateForum();
     });
+ 
 
-    router.route("/bill/create").post(isAdmin, (req, res, next) => {
+    router.route("/bills").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).getBills();
+    });
+    router.route("/bills/create").post(isAdmin, (req, res, next) => {
       return new Controller(req, res, next).createBills();
     });
-
-    router.route("/bill").get(isAdmin, (req, res, next) => {
+  
+    router.route("/bills/payment").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).adminGetUserBillPayments();
+    });
+    router.route("/bills/payment/:paymentId").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).adminGetUserParticularBillPayment();
+    }); 
+  
+    router.route("/bills/:billId").get(isAdmin, (req, res, next) => {
       return new Controller(req, res, next).getBill();
     });
+    router.route("/bills/:billId/update").put(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).updateBill();
+    });
+    router.route("/bills/:billId/pay").post(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).userPayBills();
+    });
 
-    router
-      .route("/bill/:billType/:billId/update")
-      .put(isAdmin, (req, res, next) => {
-        return new Controller(req, res, next).updateBill();
-      });
+
+
+
+
+
+
+
+
+
+ 
 
       router.route("/properties/delete").delete(isAdmin, (req, res, next) => {
         return new Controller(req, res, next).deleteEstateProperty();
