@@ -28,6 +28,7 @@ const propertyAdCheckoutSchemaObject = {
   months: defaultString,
   amount: defaultString,
   propertyAdId: defaultString,
+  walletId: defaultString,
   userId: defaultString,
   referrer: defaultString,
   paystackResponse: [
