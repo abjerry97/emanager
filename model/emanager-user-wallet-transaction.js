@@ -13,7 +13,7 @@ const defaultArray = {
 };
 const defaultBoolean = {
   type: Boolean,
-  default: [],
+  default: false,
 };
 const emanagerUserWalletTransactionSchemaObject = {
   status: defaultString, //0:deleted,1:

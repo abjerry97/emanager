@@ -794,11 +794,8 @@ class EmanagerWallet {
   async __initiateEstateTransaction(url, payload, message) {
     const checkEstateWalletBalance = await this.__generateEstateBalance();
     if (!isValidMongoObject(checkEstateWalletBalance)) {
-      this.res.statusCode = 500;
-      return this.res.json({
-        success: false,
-        message: "Unable to retrieve user wallet balance, try again",
-      });
+     
+      return checkEstateWalletBalance
     }
 
     // if (Number(payload.amount) > Number(checkEstateWalletBalance.value)) {
