@@ -285,6 +285,7 @@ class PortalAds {
             {
               $set: {
                 ads: existingPropertyAd,
+                isPublished: true,
               },
             },
             { new: true }
