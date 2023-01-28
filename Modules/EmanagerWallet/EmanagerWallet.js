@@ -123,10 +123,10 @@ class EmanagerWallet {
   async __depositWalletAccount(data = {}) {
     const createdOn = new Date();
 
-    const newlyCreatedUserWalletTransaction = await new UserWalletTransaction({ 
+    const newlyCreatedUserWalletTransaction = await new UserWalletTransaction({
       ...data,
       type: "credit",
-      createdOn: createdOn, 
+      createdOn: createdOn,
       status: 1, //0:deleted,1:
     });
     await newlyCreatedUserWalletTransaction.save();
@@ -144,7 +144,6 @@ class EmanagerWallet {
     const createdOn = new Date();
 
     const newlyCreatedUserWalletTransaction = await new UserWalletTransaction({
-    
       ...data,
       type: "debit",
       createdOn: createdOn,
@@ -386,6 +385,7 @@ class EmanagerWallet {
     });
   }
   async __generateEstateBalance() {
+    const createdOn = new Date()
     const estateWalletSessionId = this.res.estateWalletSessionToken;
 
     if (!estateWalletSessionId || estateWalletSessionId.length < 3) {
@@ -409,55 +409,70 @@ class EmanagerWallet {
         message:
           "Sorry!!...You don't have an active wallet session Try loging in again",
       });
+    } 
+    const newlyCreatedUserWalletTransaction =
+      await UserWalletTransaction.aggregate([
+        {
+          $match: {
+            estateId:estateWalletSessionToken.userId,
+            // success: true,
+          },
+        },
+        {
+          $group: { _id: "$estateId", amount: { $sum: "$amount" } },
+        },
+      ]);
+console.log(newlyCreatedUserWalletTransaction) 
+    const newlyCreatedEmanagerEstateWalletBalance =
+      await new EmanagerUserWalletBalance({
+        status: 1,
+        userId: estateWalletSessionToken.userId,
+        value: newlyCreatedUserWalletTransaction[0]?.amount,
+        walletId: estateWalletSessionToken.walletId,
+        sessionToken: estateWalletSessionId,
+      });
+    if (!isValidMongoObject(newlyCreatedEmanagerEstateWalletBalance)) {
+      return this.res.json({
+        success: false,
+        message:
+          "Sorry!!...You don't have an active wallet session Try loging in again",
+      });
     }
 
-    const emanagerEstateWalletBalance = await EmanagerUserWalletBalance.findOne(
+    try {
+      const deleteEmanagerEstateWalletBalance =
+        await EmanagerUserWalletBalance.updateMany(
+          {
+            _id: { $ne: newlyCreatedEmanagerEstateWalletBalance._id },
+            walletId: estateWalletSessionToken.walletId,
+          },
+          {
+            $set: { status: 0 },
+          }
+        );
+    } catch (error) {
+      console.log(error);
+    }
+
+    const updateEmanagerEstateWallet = await EmanagerEstateWallet.updateOne(
       {
-        status: 1,
         walletId: estateWalletSessionToken.walletId,
+      },
+      {
+        $set: { balance: newlyCreatedEmanagerEstateWalletBalance },
+        $push: {
+          updates: {
+            by: this.res.admin._id,
+            action: "added  balance",
+            timing: createdOn,
+          },
+        },
       }
     );
 
-    if (!isValidMongoObject(emanagerEstateWalletBalance)) {
-      // to remove ###############################
+    await newlyCreatedEmanagerEstateWalletBalance.save();
 
-      const newlyCreatedEmanagerEstateWalletBalance =
-        await new EmanagerUserWalletBalance({
-          status: 1,
-          userId: estate._id,
-          walletId: estateWalletSessionToken.walletId,
-          sessionToken: userWalletSessionId,
-        });
-      if (isValidMongoObject(newlyCreatedEmanagerEstateWalletBalance)) {
-        await newlyCreatedEmanagerEstateWalletBalance.save();
-        const updateEmanagerEstateWallet = await EmanagerEstateWallet.updateOne(
-          {
-            status: 1,
-            walletId: userWalletSessionToken.walletId,
-          },
-          {
-            $set: { balance: newlyCreatedEmanagerEstateWalletBalance },
-            $push: {
-              updates: {
-                by: this.res.admin._id,
-                action: "added estate default balance",
-                timing: createdOn,
-              },
-            },
-          }
-        );
-        return newlyCreatedEmanagerEstateWalletBalance;
-
-        // to remove ###############################
-        // this.res.statusCode = 500;
-        // return this.res.json({
-        //   success: false,
-        //   message: "Error Fetching balance",
-        // });
-      }
-    }
-
-    return emanagerEstateWalletBalance;
+    return newlyCreatedEmanagerEstateWalletBalance;
   }
 
   async __makeQpayWalletGetRequest(url, payload, message) {
@@ -552,7 +567,13 @@ class EmanagerWallet {
       });
     }
   }
-  async __makeQpayWalletTransaction(url, payload, message, userBalance,walletId) {
+  async __makeQpayWalletTransaction(
+    url,
+    payload,
+    message,
+    userBalance,
+    walletId
+  ) {
     const createdOn = new Date();
     if (!isValidMongoObject(this.res.user)) {
       this.res.statusCode = 401;
@@ -607,15 +628,16 @@ class EmanagerWallet {
     if (walletService.status != 200) {
       if (walletService.response && walletService.response.status === 401) {
         await this.__inValidateQpayWalletSessionToken(this.res.user);
-      } 
-      const {name,}=  this.res.user
+      }
+      const { name } = this.res.user;
       const newWithdrawRequest = await this.__withdrawFromWalletAccount({
         isSuccesful: false,
         name: name.value,
         statusCode: walletService.response.status,
-        serverStatus: walletService.response.data.status,walletId,
-        ...walletService.response.data,...payload
-       
+        serverStatus: walletService.response.data.status,
+        walletId,
+        ...walletService.response.data,
+        ...payload,
       });
 
       if (!isValidMongoObject(newWithdrawRequest)) {
@@ -629,11 +651,13 @@ class EmanagerWallet {
     } else {
       const newWithdrawRequest = await this.__withdrawFromWalletAccount({
         isSuccesful: true,
-        ...walletService.response, 
+        ...walletService.response,
         name: name.value,
         statusCode: walletService.response.status,
-        serverStatus: walletService.response.data.status,walletId,
-        ...walletService.response.data,...payload
+        serverStatus: walletService.response.data.status,
+        walletId,
+        ...walletService.response.data,
+        ...payload,
       });
       if (!isValidMongoObject(newWithdrawRequest)) {
         return newWithdrawRequest;
@@ -794,8 +818,7 @@ class EmanagerWallet {
   async __initiateEstateTransaction(url, payload, message) {
     const checkEstateWalletBalance = await this.__generateEstateBalance();
     if (!isValidMongoObject(checkEstateWalletBalance)) {
-     
-      return checkEstateWalletBalance
+      return checkEstateWalletBalance;
     }
 
     // if (Number(payload.amount) > Number(checkEstateWalletBalance.value)) {
@@ -824,8 +847,7 @@ class EmanagerWallet {
         message: "Unable to retrieve user wallet balance, try again",
       });
     }
- 
-    
+
     // if (Number(payload.amount) > Number(checkUserWalletBalance.value)) {
     //   this.res.statusCode = 409;
     //   return this.res.json({
@@ -839,7 +861,8 @@ class EmanagerWallet {
       url,
       payload,
       message,
-      checkUserWalletBalance?.value,checkUserWalletBalance.walletId
+      checkUserWalletBalance?.value,
+      checkUserWalletBalance.walletId
     );
     return newProviderRequest;
   }
