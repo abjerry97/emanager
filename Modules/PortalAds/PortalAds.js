@@ -240,17 +240,17 @@ class PortalAds {
       // Retrieve the request's body
       const event = req.body;
       // Do something with event
-
+      const {phone,months,propertyAdId,userId,referrer} = event.data.metadata || {}
       try {
         const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
           status: 1,
           event: event.event,
-          phone: event.phone,
-          months: event.months,
-          amount: event.amount,
-          propertyAdId: event.propertyAdId,
-          userId: event.userId,
-          referrer: event.referrer,
+          phone,
+          months,
+          amount,
+          propertyAdId,
+          userId,
+          referrer,
           paystackResponse: event,
           createdOn
         });
@@ -297,10 +297,10 @@ class PortalAds {
           const newAdPaymentTransaction =  await new UserWalletTransaction({
             status:1, 
             type: "propertyAd", 
-            name: event.name,
-            amount: event.amount,
+            name,
+            amount,
             isDebit: false,
-            ownerId: event.userId,
+            ownerId: userId,
             message: `Add payment for + ${existingPropertyAd.title}`,    
             createdOn,
           }) 
