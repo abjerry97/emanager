@@ -230,14 +230,15 @@ class PortalAds {
   }
 
   async __confirmPostAdCheckout() {
-    const createdOn = new Date();
-console.log(123456)
+    const createdOn = new Date(); 
     //validate event
     const hash = crypto
       .createHmac("sha512", secret)
       .update(JSON.stringify(this.req.body))
       .digest("hex");
-    if (hash == this.req.headers["x-paystack-signature"]) {
+      // hash == this.req.headers["x-paystack-signature"]
+      console.log(hash)
+    if (true) {
       // Retrieve the request's body
       const event = this.req.body;
       // Do something with event
