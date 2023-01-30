@@ -273,13 +273,8 @@ console.log(newlyCreatedPropertyAdCheckout)
           },
           { new: true }
         );
-
-        const existingPropertyAd = await PropertyAd.find({
-          status: 1,
-          propertyId: updateexistingPropertyAd.propertyId,
-        });
-
-        if (isValidArrayOfMongoObject(existingPropertyAd)) {
+ 
+        if (isValidMongoObject( updateexistingPropertyAd)) {
           const updateexistingProperty = await Property.findOneAndUpdate(
             {
               status: 1,
