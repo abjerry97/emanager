@@ -315,7 +315,7 @@ console.log(newlyCreatedPropertyAdCheckout)
       }
     }
 
-    res.send(200);
+    this.res.send(200);
   }
 
   async __createAdImage(PropertyAdId, userId, files) {
