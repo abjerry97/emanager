@@ -10,14 +10,14 @@ const {
   isValidPhonenumber,
   isValidArrayOfMongoObject,
   isValidPassword,
-} = require("../../helpers/validators");  
-const UserEstate = require("../../model/user-estate"); 
+} = require("../../helpers/validators");
+const UserEstate = require("../../model/user-estate");
 const FoodEstateLinking = require("../../model/food-estate-linking");
 const GoodEstateLinking = require("../../model/good-estate-linking");
 const ServiceEstateLinking = require("../../model/service-estate-linking");
 const BusinessEstateLinking = require("../../model/business-estate-linking");
 const PropertyEstateLinking = require("../../model/property-estate-linking");
-const Property = require("../../model/property"); 
+const Property = require("../../model/property");
 const House = require("../../model/house");
 const Food = require("../../model/food");
 const PropertyDescription = require("../../model/property-description");
@@ -49,13 +49,14 @@ const QpayWallet = require("../QpayWallet/QpayWallet");
 const EmanagerWallet = require("../EmanagerWallet/EmanagerWallet");
 const Bill = require("../Bill/Bill");
 const Bills = require("../../model/bills");
+const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
 class PortalAdmin {
   constructor(req, res, next) {
     this.req = req;
     this.res = res;
-    this.next = next; 
-    this.emanagerWallet = new EmanagerWallet(this.req,this.res ); 
-    this.estateBills = new Bill(this.req,this.res ); 
+    this.next = next;
+    this.emanagerWallet = new EmanagerWallet(this.req, this.res);
+    this.estateBills = new Bill(this.req, this.res);
   }
 
   async __portalOverview() {
@@ -65,66 +66,59 @@ class PortalAdmin {
     const estate = this.res.estate || "";
     const estateId = this.res.estate._id || "";
 
-
-
-    
     if (!isValidMongoObject(admin) || !isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 406
+      this.res.statusCode = 406;
       return this.res.json({
         success: false,
         message: "invalid admin",
       });
     }
     if (!isValidMongoObject(estate)) {
-      this.res.statusCode = 406
+      this.res.statusCode = 406;
       return this.res.json({
         success: false,
         message: "invalid estate",
       });
     }
 
-    const estateBills   = await Bills.find(
+    const estateBills = await Bills.find(
       {
-        status: 1, 
+        status: 1,
         // estateId,
       },
       {
-        _id: 1,  
+        _id: 1,
         type: 1,
-        estateId: 1, 
-        revenue: 1, 
+        estateId: 1,
+        revenue: 1,
       }
     ).sort({ _id: -1 });
- 
 
-
-    
     const overview = {
       walletBalance: 0,
-      estateRevenue: [], 
+      estateRevenue: [],
     };
 
-    if(Array.isArray(estateBills)){
-    const estateRevenue =   estateBills.map((estateBill,index)=>{
-      const newObj = {}
-      newObj.type = `revenue from ${estateBill.type}` 
-      newObj.value =   estateBill.revenue
-       return  newObj
-      })
-      overview.estateRevenue=   estateRevenue
+    if (Array.isArray(estateBills)) {
+      const estateRevenue = estateBills.map((estateBill, index) => {
+        const newObj = {};
+        newObj.type = `revenue from ${estateBill.type}`;
+        newObj.value = estateBill.revenue;
+        return newObj;
+      });
+      overview.estateRevenue = estateRevenue;
     }
-   const walletBalance = await this.emanagerWallet.__generateEstateBalance() 
-if (isValidMongoObject(walletBalance)){
-  overview.walletBalance = walletBalance.value
-}
+    const walletBalance = await this.emanagerWallet.__generateEstateBalance();
+    if (isValidMongoObject(walletBalance)) {
+      overview.walletBalance = walletBalance.value;
+    }
 
-   
     // Resdience
 
     const currentEstateUsers = await UserEstate.countDocuments({
       status: "1",
       // estateId,
-      ownerType:"0",
+      ownerType: "0",
     });
 
     if (isNaN(currentEstateUsers)) {
@@ -139,6 +133,24 @@ if (isValidMongoObject(walletBalance)){
     if (isNaN(currentEstateHouses)) {
       overview.houseCount = 0;
     } else overview.houseCount = currentEstateHouses;
+
+    const propertyAdTransaction = await UserWalletTransaction.aggregate([
+      {
+        $match: {
+          type: "propertyAd",
+          // success: true,
+        },
+      },
+      {
+        $group: { _id: "$estateId", amount: { $sum: "$amount" } },
+      },
+    ]);
+
+    const propertyAdRevenue = {
+      type: "Revenue From Property Ad",
+      value: propertyAdTransaction[0]?.amount || 0,
+    };
+    overview.estateRevenue.push(propertyAdRevenue)
 
     return this.res.json({ overview });
   }
@@ -164,7 +176,7 @@ if (isValidMongoObject(walletBalance)){
       .limit(pageSize)
       .skip(pageSize * page);
     if (!isValidArrayOfMongoObject(foundProperty)) {
-      this.res.statusCode = 404
+      this.res.statusCode = 404;
       return this.res.json({
         success: false,
         message: "No Property found",
@@ -183,7 +195,7 @@ if (isValidMongoObject(walletBalance)){
     const admin = this.res.admin || {};
     const { _id: adminId = "" } = admin;
     if (!isValidMongoObject(admin)) {
-      this.res.statusCode = 404
+      this.res.statusCode = 404;
       return this.res.json({
         success: false,
         message: "Sorry!...admin not found!!!",
@@ -192,14 +204,14 @@ if (isValidMongoObject(walletBalance)){
     const { _id: estateId } = this.res.estate || "";
 
     if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid estate id",
       });
     }
     if (!isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid admin",
@@ -217,8 +229,6 @@ if (isValidMongoObject(walletBalance)){
           });
           const propertyUpdatableSet = {};
           if (isValidMongoObject(estateProperty)) {
-          
-
             try {
               const updateParticularPropertyDescription =
                 await PropertyDescription.findOneAndUpdate(
@@ -449,7 +459,7 @@ if (isValidMongoObject(walletBalance)){
                 );
             } catch (error) {
               console.log(error);
-            } 
+            }
             try {
               propertyUpdatableSet.status = 0;
 
@@ -506,7 +516,7 @@ if (isValidMongoObject(walletBalance)){
       .limit(pageSize)
       .skip(pageSize * page);
     if (!isValidArrayOfMongoObject(foundFoods)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "No Food found",
@@ -525,7 +535,7 @@ if (isValidMongoObject(walletBalance)){
     const admin = this.res.admin || {};
     const { _id: adminId = "" } = admin;
     if (!isValidMongoObject(admin)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...admin not found!!!",
@@ -534,14 +544,14 @@ if (isValidMongoObject(walletBalance)){
     const { _id: estateId } = this.res.estate || "";
 
     if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid estate id",
       });
     }
     if (!isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid admin",
@@ -559,8 +569,6 @@ if (isValidMongoObject(walletBalance)){
           });
           const foodUpdatableSet = {};
           if (isValidMongoObject(estateFood)) {
-          
-
             try {
               const updateParticularFoodDescription =
                 await FoodDescription.findOneAndUpdate(
@@ -847,7 +855,7 @@ if (isValidMongoObject(walletBalance)){
       .limit(pageSize)
       .skip(pageSize * page);
     if (!isValidArrayOfMongoObject(foundGoods)) {
-      this.res.statusCode = 404
+      this.res.statusCode = 404;
       return this.res.json({
         success: false,
         message: "No Good found",
@@ -866,7 +874,7 @@ if (isValidMongoObject(walletBalance)){
     const admin = this.res.admin || {};
     const { _id: adminId = "" } = admin;
     if (!isValidMongoObject(admin)) {
-      this.res.statusCode = 404
+      this.res.statusCode = 404;
       return this.res.json({
         success: false,
         message: "Sorry!...admin not found!!!",
@@ -875,14 +883,14 @@ if (isValidMongoObject(walletBalance)){
     const { _id: estateId } = this.res.estate || "";
 
     if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid estate id",
       });
     }
     if (!isValidMongoObjectId(adminId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid admin",
@@ -900,8 +908,6 @@ if (isValidMongoObject(walletBalance)){
           });
           const goodUpdatableSet = {};
           if (isValidMongoObject(estateGood)) {
-          
-
             try {
               const updateParticularGoodDescription =
                 await GoodDescription.findOneAndUpdate(
@@ -1181,7 +1187,7 @@ if (isValidMongoObject(walletBalance)){
     const { _id: estateId } = this.res.estate || "";
 
     if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid estate id",
@@ -1212,7 +1218,7 @@ if (isValidMongoObject(walletBalance)){
     const { _id: estateId } = this.res.estate || "";
 
     if (!isValidMongoObjectId(estateId)) {
-      this.res.statusCode = 400
+      this.res.statusCode = 400;
       return this.res.json({
         success: false,
         message: "Sorry!...Invalid estate id",
