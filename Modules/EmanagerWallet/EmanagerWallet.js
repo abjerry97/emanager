@@ -421,8 +421,7 @@ class EmanagerWallet {
         {
           $group: { _id: "$estateId", amount: { $sum: "$amount" } },
         },
-      ]);
-console.log(newlyCreatedUserWalletTransaction) 
+      ]); 
     const newlyCreatedEmanagerEstateWalletBalance =
       await new EmanagerUserWalletBalance({
         status: 1,
