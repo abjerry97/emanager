@@ -27,7 +27,7 @@ const PropertyAdPostPrice = require("../../model/property-ad-post-price");
 const PropertyAdPayment = require("../../model/property-ad-payment");
 const PropertyAdCheckout = require("../../model/property-ad-checkout");
 const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
-const secret = "qpay"
+const secret = process.env.PAYSTACK_SECRET || "qpay"
 class PortalAds {
   constructor(req, res, next) {
     this.req = req;
@@ -238,11 +238,11 @@ class PortalAds {
       .digest("hex");
       // hash == this.req.headers["x-paystack-signature"]
       console.log(hash)
+      console.log(this.req.headers["x-paystack-signature"])
     if (true) {
       // Retrieve the request's body
       const event = this.req.body;
-      // Do something with event
-      console.log(event)
+      // Do something with event 
       const {phone,name,amount,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
       try {
         const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
@@ -259,8 +259,7 @@ class PortalAds {
         });
         if (isValidMongoObject(newlyCreatedPropertyAdCheckout)) {
           await newlyCreatedPropertyAdCheckout.save();
-        }
-console.log(newlyCreatedPropertyAdCheckout)
+        } 
         const updateexistingPropertyAd = await PropertyAd.findOneAndUpdate(
           {
             status: 1,
