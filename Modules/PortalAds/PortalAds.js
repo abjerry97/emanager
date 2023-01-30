@@ -27,6 +27,7 @@ const PropertyAdPostPrice = require("../../model/property-ad-post-price");
 const PropertyAdPayment = require("../../model/property-ad-payment");
 const PropertyAdCheckout = require("../../model/property-ad-checkout");
 const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
+const secret = "qpay"
 class PortalAds {
   constructor(req, res, next) {
     this.req = req;
@@ -230,7 +231,7 @@ class PortalAds {
 
   async __confirmPostAdCheckout() {
     const createdOn = new Date();
-
+console.log(123456)
     //validate event
     const hash = crypto
       .createHmac("sha512", secret)
