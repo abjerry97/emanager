@@ -237,7 +237,7 @@ console.log(123456)
       .createHmac("sha512", secret)
       .update(JSON.stringify(this.req.body))
       .digest("hex");
-    if (hash == req.headers["x-paystack-signature"]) {
+    if (hash == this.req.headers["x-paystack-signature"]) {
       // Retrieve the request's body
       const event = this.req.body;
       // Do something with event
