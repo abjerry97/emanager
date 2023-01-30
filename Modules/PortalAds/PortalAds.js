@@ -235,11 +235,11 @@ console.log(123456)
     //validate event
     const hash = crypto
       .createHmac("sha512", secret)
-      .update(JSON.stringify(req.body))
+      .update(JSON.stringify(this.req.body))
       .digest("hex");
     if (hash == req.headers["x-paystack-signature"]) {
       // Retrieve the request's body
-      const event = req.body;
+      const event = this.req.body;
       // Do something with event
       console.log(event)
       const {phone,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
