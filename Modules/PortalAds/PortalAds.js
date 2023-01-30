@@ -269,6 +269,8 @@ console.log(newlyCreatedPropertyAdCheckout)
           {
             $set: {
               isPublished: true,
+              isApproved: true,
+              isActive: true,
             },
           },
           { new: true }
@@ -284,6 +286,8 @@ console.log(newlyCreatedPropertyAdCheckout)
               $set: {
                 ads: updateexistingPropertyAd,
                 isPublished: true,
+                isApproved: true,
+                isActive: true,
               },
             },
             { new: true }
