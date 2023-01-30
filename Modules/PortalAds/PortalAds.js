@@ -230,7 +230,7 @@ class PortalAds {
 
   async __confirmPostAdCheckout() {
     const createdOn = new Date();
-
+console.log(123456)
     //validate event
     const hash = crypto
       .createHmac("sha512", secret)
