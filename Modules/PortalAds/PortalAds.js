@@ -299,7 +299,7 @@ console.log(newlyCreatedPropertyAdCheckout)
             amount,
             isDebit: false,
             ownerId: userId,
-            message: `Add payment for + ${existingPropertyAd.title}`,    
+            message: `Add payment for + ${updateexistingPropertyAd.title}`,    
             createdOn,
           }) 
 
