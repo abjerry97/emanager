@@ -243,7 +243,7 @@ class PortalAds {
       const event = this.req.body;
       // Do something with event
       console.log(event)
-      const {phone,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
+      const {phone,amount,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
       try {
         const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
           status: 1,
