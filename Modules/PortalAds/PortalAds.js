@@ -235,11 +235,8 @@ class PortalAds {
     const hash = crypto
       .createHmac("sha512", secret)
       .update(JSON.stringify(this.req.body))
-      .digest("hex");
-      // hash == this.req.headers["x-paystack-signature"]
-      console.log(hash)
-      console.log(this.req.headers["x-paystack-signature"])
-    if (true) {
+      .digest("hex"); 
+    if ( hash == this.req.headers["x-paystack-signature"]) {
       // Retrieve the request's body
       const event = this.req.body;
       // Do something with event 
@@ -301,7 +298,8 @@ class PortalAds {
             name,
             amount,
             isDebit: false,
-            ownerId: userId,
+            ownerId: userId, 
+            estateId: "63a4c7fa4fd539874dd4bbf7", //to remove
             message: `Add payment for + ${updateexistingPropertyAd.title}`,    
             createdOn,
           }) 
