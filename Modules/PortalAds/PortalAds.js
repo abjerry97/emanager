@@ -282,7 +282,7 @@ console.log(newlyCreatedPropertyAdCheckout)
             },
             {
               $set: {
-                ads: existingPropertyAd,
+                ads: updateexistingPropertyAd,
                 isPublished: true,
               },
             },
