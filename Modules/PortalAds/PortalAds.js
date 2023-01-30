@@ -243,7 +243,7 @@ class PortalAds {
       const event = this.req.body;
       // Do something with event
       console.log(event)
-      const {phone,amount,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
+      const {phone,name,amount,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
       try {
         const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
           status: 1,
@@ -273,13 +273,8 @@ console.log(newlyCreatedPropertyAdCheckout)
           },
           { new: true }
         );
-
-        const existingPropertyAd = await PropertyAd.find({
-          status: 1,
-          propertyId: updateexistingPropertyAd.propertyId,
-        });
-
-        if (isValidArrayOfMongoObject(existingPropertyAd)) {
+ 
+        if (isValidMongoObject( updateexistingPropertyAd)) {
           const updateexistingProperty = await Property.findOneAndUpdate(
             {
               status: 1,
@@ -1439,7 +1434,7 @@ console.log(newlyCreatedPropertyAdCheckout)
     }
 
     try {
-      const updateexistingPropertyAd = await PropertyAd.updateMany(
+      const updateexistingPropertyAd = await PropertyAd.updateOne(
         {
           status: 1,
           propertyId: propertyId,
