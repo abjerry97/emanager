@@ -17,6 +17,10 @@ const defaultDate = {
   type: Date,
   default: new Date(),
 };
+const defaultArray = {
+  type: Array,
+  default: [],
+};
 const defaultBoolean = {
   type: Boolean,
   default: false,
@@ -31,13 +35,7 @@ const propertyAdCheckoutSchemaObject = {
   walletId: defaultString,
   userId: defaultString,
   referrer: defaultString,
-  paystackResponse: [
-    {
-      by: defaultString, // admin ID of the user who made this update
-      action: defaultString, //0:delete,1:added a new category,2:removed a category,3:published,4:unpublished,5:added new option group,6:removed an option group,7:updated an option group
-      timing: defaultDate,
-    },
-  ],
+  paystackResponse: defaultArray,
   createdBy: defaultString, // user ID of the user who created this entry
   createdOn: defaultDate,
 };
