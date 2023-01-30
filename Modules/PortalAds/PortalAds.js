@@ -240,7 +240,8 @@ class PortalAds {
       // Retrieve the request's body
       const event = req.body;
       // Do something with event
-      const {phone,months,propertyAdId,userId,referrer} = event.data.metadata || {}
+      console.log(event)
+      const {phone,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
       try {
         const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
           status: 1,
@@ -255,9 +256,9 @@ class PortalAds {
           createdOn
         });
         if (isValidMongoObject(newlyCreatedPropertyAdCheckout)) {
-          await existingPropertyAdCheckout.save();
+          await newlyCreatedPropertyAdCheckout.save();
         }
-
+console.log(newlyCreatedPropertyAdCheckout)
         const updateexistingPropertyAd = await PropertyAd.findOneAndUpdate(
           {
             status: 1,
