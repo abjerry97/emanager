@@ -27,7 +27,7 @@ const PropertyAdPostPrice = require("../../model/property-ad-post-price");
 const PropertyAdPayment = require("../../model/property-ad-payment");
 const PropertyAdCheckout = require("../../model/property-ad-checkout");
 const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
-const secret = process.env.PAYSTACK_SECRET || "qpay"
+const secret = process.env.PAYSTACK_SECRET || "qpay";
 class PortalAds {
   constructor(req, res, next) {
     this.req = req;
@@ -230,17 +230,19 @@ class PortalAds {
   }
 
   async __confirmPostAdCheckout() {
-    const createdOn = new Date(); 
+    const createdOn = new Date();
     //validate event
     const hash = crypto
       .createHmac("sha512", secret)
       .update(JSON.stringify(this.req.body))
-      .digest("hex"); 
-    if ( hash == this.req.headers["x-paystack-signature"]) {
+      .digest("hex");
+    if (hash == this.req.headers["x-paystack-signature"]) {
       // Retrieve the request's body
       const event = this.req.body;
-      // Do something with event 
-      const {phone,name,amount,months,propertyAdId,userId,referrer} = event?.data?.metadata || {}
+      // Do something with event
+      const { phone, name, amount, months, propertyAdId, userId, referrer } =
+        event?.data?.metadata || {};
+      let updateexistingPropertyAdTitle = ``;
       try {
         const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
           status: 1,
@@ -252,35 +254,20 @@ class PortalAds {
           userId,
           referrer,
           paystackResponse: event,
-          createdOn
+          createdOn,
         });
         if (isValidMongoObject(newlyCreatedPropertyAdCheckout)) {
           await newlyCreatedPropertyAdCheckout.save();
-        } 
-        const updateexistingPropertyAd = await PropertyAd.findOneAndUpdate(
-          {
-            status: 1,
-            _id: propertyAdId,
-          },
-          {
-            $set: {
-              isPublished: true,
-              isApproved: true,
-              isActive: true,
-            },
-          },
-          { new: true }
-        );
- 
-        if (isValidMongoObject( updateexistingPropertyAd)) {
-          const updateexistingProperty = await Property.findOneAndUpdate(
+        }
+        let isSuccesful = stringIsEqual(event.event, "charge.success");
+        if (isSuccesful) {
+          const updateexistingPropertyAd = await PropertyAd.findOneAndUpdate(
             {
               status: 1,
-              _id: updateexistingPropertyAd.propertyId,
+              _id: propertyAdId,
             },
             {
               $set: {
-                ads: updateexistingPropertyAd,
                 isPublished: true,
                 isApproved: true,
                 isActive: true,
@@ -289,23 +276,40 @@ class PortalAds {
             { new: true }
           );
 
+          if (isValidMongoObject(updateexistingPropertyAd)) {
+            const updateexistingProperty = await Property.findOneAndUpdate(
+              {
+                status: 1,
+                _id: updateexistingPropertyAd.propertyId,
+              },
+              {
+                $set: {
+                  ads: updateexistingPropertyAd,
+                  isPublished: true,
+                  isApproved: true,
+                  isActive: true,
+                },
+              },
+              { new: true }
+            );
 
+            updateexistingPropertyAdTitle = updateexistingPropertyAd?.title;
+          }
 
-
-          const newAdPaymentTransaction =  await new UserWalletTransaction({
-            status:1, 
-            type: "propertyAd", 
+          const newAdPaymentTransaction = await new UserWalletTransaction({
+            status: 1,
+            type: "propertyAd",
             name,
             amount,
+            isSuccesful,
             isDebit: false,
-            ownerId: userId, 
+            ownerId: userId,
             estateId: "63a4c7fa4fd539874dd4bbf7", //to remove
-            message: `Add payment for + ${updateexistingPropertyAd.title}`,    
+            message: `Add payment for + ${updateexistingPropertyAdTitle}`,
             createdOn,
-          }) 
+          });
 
-
-          await newAdPaymentTransaction.save()
+          await newAdPaymentTransaction.save();
         }
       } catch (error) {
         console.log(error);
