@@ -216,6 +216,9 @@ class PortalAds {
 
     newlyCreatedPropertyAd.propertyId = addProperty._id;
     addProperty.ads = newlyCreatedPropertyAd;
+    addProperty.createdBy = userId;
+    
+
     addProperty.adType = "Real Estate";
     await newlyCreatedAdDescription.save();
 
@@ -814,6 +817,9 @@ class PortalAds {
     const createdOn = new Date();
     const query = {
       status: 1,
+      isPublished: true,
+      isApproved: true,
+      isActive: true,
     };
     const pageSize = this.req.query["pageSize"] || "";
     const location = this.req.query["location"] || "";
@@ -1010,7 +1016,7 @@ class PortalAds {
       const updateexistingPropertyAd = await PropertyAd.updateOne(
         {
           status: 1,
-          propertyAdId: propertyAdId,
+          _id: propertyAdId,
         },
         {
           $set: {

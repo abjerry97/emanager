@@ -239,7 +239,7 @@ function portalDefaultRoute() {
     router.route("/property/ads/:propertyId/approve").put(isPortalUser,(req, res, next) => {
       return new Controller(req, res, next).adminApproveProperty();
     });
-    router.route("/property/ads/:propertyId/delete").delete(isPortalUser,(req, res, next) => {
+    router.route("/property/ads/:propertyAdId/delete").delete(isPortalUser,(req, res, next) => {
       return new Controller(req, res, next).deletePropertyAd();
     });
   
