@@ -1002,12 +1002,12 @@ class Controller {
       this.next
     ).__getPropertyCategory();
   }
-  async updatePropertyAd() {
+  async  deletePropertyAd() {
     return await new PortalAds(
       this.req,
       this.res,
       this.next
-    ).__updatePropertyAd();
+    ).__deletePropertyAd();
   }
   // async createPropertyPostPrice() {
   //   return await new PortalAds(
