@@ -272,7 +272,7 @@ class PortalAds {
             {
               $set: {
                 isPublished: true,
-                isApproved: true,
+                // isApproved: true,
                 isActive: true,
               },
             },
@@ -289,7 +289,7 @@ class PortalAds {
                 $set: {
                   ads: updateexistingPropertyAd,
                   isPublished: true,
-                  isApproved: true,
+                  // isApproved: true,
                   isActive: true,
                 },
               },
