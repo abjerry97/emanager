@@ -460,6 +460,8 @@ class Visitor {
         plateNumber: newGuest.plateNumber.value || "",
         companyName: newGuest.companyName.value || "",
         houseAddress: newGuest.houseAddress.value || "",
+        phoneNumber: newGuest.phoneNumber.value || "",
+        email: newGuest.email.value || "",
         ownerName: newGuest.ownerName || "",
         createdOn: newGuest.createdOn,
         createdOn: newGuest.createdOn,
