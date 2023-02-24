@@ -1,6 +1,4 @@
-const mongoose = require("mongoose");
-const BillAmount = require("./bill-amount");
-const BillDate = require("./bill-date");
+const mongoose = require("mongoose"); 
 const defaultString = {
   type: String,
   default: "",
