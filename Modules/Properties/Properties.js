@@ -1272,8 +1272,7 @@ class Properties {
                 );
             } catch (error) {
               console.log(error);
-            }
-            console.log(propertyUpdatableSet);
+            } 
             try {
               propertyUpdatableSet.status = 0;
 

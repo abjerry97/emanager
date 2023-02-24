@@ -13,8 +13,7 @@ const pollSchemaObject = {
   estateId: defaultString,
   type: defaultString, //0:exco, 1:others
   role:defaultString,
-  createdOn: defaultDate,
-  expiredOn: defaultDate,
+  createdOn: defaultDate, 
   updates: [
     {
       by: defaultString, // user ID of the user who made this update

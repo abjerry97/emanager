@@ -32,7 +32,9 @@ function adminRoute(isAdminStatus) {
     router.route("/estates").get((req, res, next) => {
       return new Controller(req, res, next).findEstates();
     });
-
+    router.route("/updates").get(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).getAdminUpdateCount();
+    });
     router
       .route("/admins/create")
       .post(isAdmin, travelMode, (req, res, next) => {
@@ -78,6 +80,21 @@ function adminRoute(isAdminStatus) {
       .post(isAdmin, travelMode, (req, res, next) => {
         return new Controller(req, res, next).createElection();
       });
+    router
+      .route("/emergency/details/add")
+      .post(isAdmin, travelMode, (req, res, next) => {
+        return new Controller(req, res, next).addEmergencyDetails();
+      });
+    router
+      .route("/emergency/details")
+      .get(isAdmin, travelMode, (req, res, next) => {
+        return new Controller(req, res, next).getEmergencyDetails();
+      });
+    router
+      .route("/emergency/:detailsId/delete")
+      .delete(isAdmin, travelMode, (req, res, next) => {
+        return new Controller(req, res, next).deleteEmergencyDetails();
+      });
 
     router
       .route("/election/active")
@@ -86,26 +103,28 @@ function adminRoute(isAdminStatus) {
       });
 
     router
-      .route("/election/candidate/create")
+      .route("/election/:electionId/candidate/add")
       .post(isAdmin, travelMode, (req, res, next) => {
         return new Controller(req, res, next).createElectionCandidate();
       });
 
     router
-      .route("/election/candidate/active")
+      .route("/election/candidates/active")
       .get(isAdmin, travelMode, (req, res, next) => {
         return new Controller(req, res, next).getActiveCandidates();
       });
 
     router
-      .route("/election/candidate")
+      .route("/election/candidates")
       .get(isAdmin, travelMode, (req, res, next) => {
         return new Controller(req, res, next).getAllCandidates();
       });
 
-    router.route("/election/end").get(isAdmin, travelMode, (req, res, next) => {
-      return new Controller(req, res, next).endElection();
-    });
+    router
+      .route("/election/:electionId/end")
+      .post(isAdmin, travelMode, (req, res, next) => {
+        return new Controller(req, res, next).endElection();
+      });
 
     router
       .route("/admins/votes/result")
@@ -193,7 +212,7 @@ function adminRoute(isAdminStatus) {
       return new Controller(req, res, next).getFoods();
     });
     router.route("/foods/delete").delete(isAdmin, (req, res, next) => {
-      return new Controller(req, res, next).deleteEstateFood();
+      return new Controller(req, res, next).deleteFood();
     });
 
     router.route("/goods").get(isAdmin, (req, res, next) => {
@@ -205,14 +224,12 @@ function adminRoute(isAdminStatus) {
     router.route("/house/add").post(isAdmin, (req, res, next) => {
       return new Controller(req, res, next).createHouse();
     });
-    router.route("/houses").get(isAdmin, (req, res, next) => {
+    router.route("/house").get(isAdmin, (req, res, next) => {
       return new Controller(req, res, next).getHouses();
     });
-    router
-      .route("/houses/:houseId/delete")
-      .delete(isAdmin, (req, res, next) => {
-        return new Controller(req, res, next).deleteEstateHouse();
-      });
+    router.route("/house/:houseId/delete").delete(isAdmin, (req, res, next) => {
+      return new Controller(req, res, next).deleteEstateHouse();
+    });
     router.route("/wallet/balance").get(isAdmin, (req, res, next) => {
       return new Controller(req, res, next).getWalletBalance();
     });

@@ -14,6 +14,9 @@ const BusinessEstateLinking = require("../model/business-estate-linking");
 const PropertyEstateLinking = require("../model/property-estate-linking");
 const Notification = require("../model/notification");
 const UserNotifications = require("../model/user-notifications");   
+const UserEstate = require("../model/user-estate");
+const House = require("../model/house");
+const Poll = require("../model/poll");
 require("dotenv").config();
  
 
@@ -191,7 +194,119 @@ const refreshUserUpdates = async (req, res, next) => {
   res.propertyCount = currentEstatePropertyLinkingCount;
   next();
 };
+const refreshAdminUpdates = async (req, res, next) => {
+  const admin = res.admin || {};
+  const estate = res.estate || {};
+  if (!isValidMongoObject(admin)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...You are not Authorized",
+    });
+  }
+  if (!isValidMongoObject(estate)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...Invalid Estate",
+    });
+  }
+
+  const { _id: adminId } = admin;
+  const { _id: estateId } = estate;
+
+  if (!isValidMongoObjectId(adminId)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...Invalid admin",
+    });
+  }
+
+  if (!isValidMongoObjectId(estateId)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...Invalid Estate",
+    });
+  }
+
+  const currentAdminCount =
+    await UserEstate.countDocuments({
+      status: "1",
+      ownerType: 1, 
+      estateId,
+    });
+
+  if (isNaN(currentAdminCount)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...Admin count process error",
+    });
+  }
+
+  res.adminCount = currentAdminCount;
+ 
+
+  const currentHouseCount = await House.countDocuments({
+    status: "1",
+    estateId,
+  });
+
+  if (isNaN(currentHouseCount)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...House count process error",
+    });
+  }
+
+  res.houseCount = currentHouseCount;
+
+  const currentResidentCount = await UserEstate.countDocuments({
+    status: "1",
+    ownerType: 0, 
+    estateId,
+  });
+
+  if (isNaN(currentResidentCount)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...Resident count process error",
+    });
+  }
+
+  res.residentCount = currentResidentCount;
+
+  const currentEstateForumCount =
+    await Notification.countDocuments({
+      status: "1",
+      estateId,
+    });
+
+  if (isNaN(currentEstateForumCount)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...Forum count process error",
+    });
+  }
+
+  res.forumCount = currentEstateForumCount;
+
+   
+  const currentEstateElectionCount =
+    await Poll.countDocuments({
+      status: "1",
+      estateId,
+    });
+
+  if (isNaN(currentEstateElectionCount)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...Election count process error",
+    });
+  }
+
+  res.electionCount = currentEstateElectionCount;
+  next();
+};
   
 module.exports = { 
   refreshUserUpdates, 
+  refreshAdminUpdates
 };

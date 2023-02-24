@@ -492,9 +492,9 @@
 /**
  * @swagger
  *  paths:
- *  /houses:
+ *  /house:
  *    get:
- *      summary: get houses.
+ *      summary: get house.
  *      consumes:
  *        - application/x-www-form-urlencoded
  *      responses:
@@ -551,8 +551,8 @@
 /**
  * @swagger
  *  paths:
- *  /houses/:houseId/delete:
- *    get:
+ *  /house/:houseId/delete:
+ *    delete:
  *      summary: delete particular house.
  *      consumes:
  *        - application/x-www-form-urlencoded
