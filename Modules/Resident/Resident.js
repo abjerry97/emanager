@@ -1722,7 +1722,7 @@ class Resident extends Authentication {
     const updates = {};
 
     if (!!this.res.notificationCount && !isNaN(this.res.notificationCount)) {
-      updates.notificationCount = await this.res.notificationCount;
+      updates.notificationCount =  this.res.notificationCount;
     }
     if (!!this.res.foodsCount && !isNaN(this.res.foodsCount)) {
       updates.foodsCount = this.res.foodsCount;

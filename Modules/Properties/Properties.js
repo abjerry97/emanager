@@ -457,6 +457,7 @@ class Properties {
       isPublished: 1,
       isApproved: 1,
       isActive: 1, 
+      "ads._id": 1 ,
       "ads.isAvaliable": 1 ,
       "ads.isPublished": 1,
       "ads.isActive": 1,
@@ -1271,8 +1272,7 @@ class Properties {
                 );
             } catch (error) {
               console.log(error);
-            }
-            console.log(propertyUpdatableSet);
+            } 
             try {
               propertyUpdatableSet.status = 0;
 

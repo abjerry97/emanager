@@ -8,7 +8,7 @@ const User = require("../../model/user");
 const UserEstate = require("../../model/user-estate");
 const UserFamily = require("../../model/user-family");
 const UserMode = require("../../model/user-mode"); 
-const { refreshUserUpdates } = require("../utils");
+const { refreshUserUpdates, refreshAdminUpdates } = require("../utils");
 const { checkWalletUserSession, checkEstateWalletSession } = require("../WalletTools/WalletTools");
 const jwt = require("jsonwebtoken");
 
@@ -59,7 +59,9 @@ const isAdmin = async (req, res, next) => {
               res.userWalletSessionToken = existingUserWalletSession.sessionToken;
             }
             res.user = foundUser;
-            next();
+            // next();
+
+            refreshAdminUpdates(req, res, next)
           }
         }
       );

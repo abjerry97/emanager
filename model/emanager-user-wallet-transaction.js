@@ -3,6 +3,10 @@ const defaultString = {
   type: String,
   default: "",
 };
+const defaultNumber = {
+  type: Number,
+  default: 0,
+};
 const defaultDate = {
   type: Date,
   default: new Date(),
@@ -13,7 +17,7 @@ const defaultArray = {
 };
 const defaultBoolean = {
   type: Boolean,
-  default: [],
+  default: false,
 };
 const emanagerUserWalletTransactionSchemaObject = {
   status: defaultString, //0:deleted,1:
@@ -25,7 +29,7 @@ const emanagerUserWalletTransactionSchemaObject = {
   srcName: defaultString,
   isEstate: defaultString,
   estateId: defaultString,
-  amount: defaultString, 
+  amount: defaultNumber, 
   walletId: defaultString,
   destId: defaultString,
   srcId: defaultString,

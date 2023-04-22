@@ -239,6 +239,9 @@ function portalDefaultRoute() {
     router.route("/property/ads/:propertyId/approve").put(isPortalUser,(req, res, next) => {
       return new Controller(req, res, next).adminApproveProperty();
     });
+    router.route("/property/ads/:propertyAdId/delete").delete(isPortalUser,(req, res, next) => {
+      return new Controller(req, res, next).deletePropertyAd();
+    });
   
   router.route("/property/ads/:propertyAdId").get((req, res, next) => {
     return new Controller(req, res, next).findPropertyAdsByID();
@@ -254,19 +257,9 @@ function portalDefaultRoute() {
   });
 
   
-  router.route("/property/checkout/:checkoutId/confirm").put(isPortalUser,(req, res, next) => {
+  router.route("/property/checkout").post((req, res, next) => {
     return new Controller(req, res, next).confirmPostAdCheckout();
-  });
-  router.route("/property/checkout/:checkoutId/cancel").put(isPortalUser,(req, res, next) => {
-    return new Controller(req, res, next).cancelPostAdCheckout();
-  });
-  router.route("/property/:propertyAdId/checkout").post(isPortalUser,(req, res, next) => {
-    return new Controller(req, res, next).createPostAdCheckout();
-  });
-  
-  router.route("/property/:propertyAdId/checkout").get(isPortalUser,(req, res, next) => {
-    return new Controller(req, res, next).getPostAdCheckout();
-  });
+  }); 
   
   
   router.route("/user/properties").get(isPortalUser,(req, res, next) => {
@@ -334,11 +327,7 @@ function portalDefaultRoute() {
     router.route("/estate/wallet/transaction/:transactionId").get(isPortalUser, (req, res, next) => {
       return new Controller(req, res, next).viewParticularEmanagerEstateTransaction();
     });
-  
-     
-    router.route("/estate/wallet/transaction").get(isPortalUser, (req, res, next) => {
-      return new Controller(req, res, next).viewEmanagerEstateTransaction();
-    });
+   
   
     router.route("/banks").get(isPortalUser, (req, res, next) => {
       return new Controller(req, res, next).getBanks();
@@ -351,165 +340,8 @@ function portalDefaultRoute() {
       return new Controller(req, res, next).__transferFundsFromEstateWalletToBankAccount();
     });
   
-    
-    
-  // ###################### to remove
-  router
-    .route("/properties/update/special")
-    .put(isPortalUser, (req, res, next) => {
-      return new Controller(req, res, next).updatePropertyAd();
-    });
-
-    router.route("/xxx").post(isPortalUser, async (req, res, next) => {
-      const billHistory = await BillPaymentHistory.find({})
-      if(!isValidArrayOfMongoObject(billHistory)){
-        res.json({})
-      }
-    const billHistoryUpdates = await Promise.all(
-      (billHistory || []).map(async (particularBillHistory, index) => {
-        if (isValidMongoObject(particularBillHistory)) {
-          const estateBill = await Bills.findOne({
-            status: 1,
-            _id: particularBillHistory.billId, 
-          }); 
-          if (isValidMongoObject(estateBill)) {
-          
+     
    
-              const foundownerName = await Name.findOne({
-                ownerId: particularBillHistory.createdBy
-              })
-
-              let ownerName = ""
-              if (isValidMongoObject(foundownerName)) {
-                ownerName = foundownerName.value
-              }
-            const newBillPaymentTransaction =  await new UserWalletTransaction({
-              status:1, 
-              type: estateBill.type,
-              isEstate: 1,
-              name: ownerName,
-              estateId: estateBill.estateId,
-              amount:particularBillHistory.amount,
-              isDebit: true,
-              ownerId: particularBillHistory.createdBy,
-              message: "test test",    
-              createdOn:particularBillHistory.createdOn,
-            })
-            if (!isValidMongoObject(newBillPaymentTransaction)) {
-               res.statusCode = 500;
-              return  res.json({
-                success: false,
-                message: "Error initiating transaction, try again",
-              });
-          
-            }
-
-
-
-              await newBillPaymentTransaction.save()
-
-
-
-
-
-
-
-
-
-
-         
-      
-        
- 
-          }
-        }
-      })
-    );
-
-
-    return res.json({
-      success:true
-    });
-  });
-  router.route("/xxx1").post(isPortalUser, async (req, res, next) => {
-      const billHistory = await Admin.find({})
-      if(!isValidArrayOfMongoObject(billHistory)){
-        res.json({})
-      }
-    const billHistoryUpdates = await Promise.all(
-      (billHistory || []).map(async (particularBillHistory, index) => {
-        if (isValidMongoObject(particularBillHistory)) {
-          const estateBill = await UserEstate.findOne({
-            status: 1,
-            ownerId: particularBillHistory._id, 
-          }); 
-          if (isValidMongoObject(estateBill)) {
-
-
- 
-
-
-
-
-
-
-            try {
-              const updateEmail = await Admin.updateOne(
-                {
-                  status: 1,   
-                  _id: particularBillHistory._id,
-                },
-                {
-                  $set: {   estateId: estateBill.estateId },
-                }
-              );
-            } catch (err) {
-              console.log(err);
-            }
-      
-        
- 
-          }
-        }
-      })
-    );
-
-
-    return res.json({
-      success:true
-    });
-  });
-  
-  // router.route("/asasasas").put(isPortalUser, async (req, res, next) => {
-  //   try {
-  //     const newBills = await UserBillLinking.updateMany(
-  //       {
-  //         status: 1,
-  //         type: "1",
-  //       }, {
-
-  //         $set: { type: "estate levy"},
-  //       $push: {
-  //         updates: [
-  //           {
-  //             // by: adminId, // admin ID of the user who made this update
-  //             action: 0, //0:delete,1:added a new category,2:removed a category,3:published,4:unpublished,5:added new option group,6:removed an option group,7:updated an option group
-  //             timing: new Date(),
-  //           },
-  //         ],
-  //       }
-  //       }
-  //     );
-  //     console.log(newBills);
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-
-  //   return res.json({
-  //     status: 1,
-  //   });
-  // });
-
   return router;
 }
 module.exports = { portalDefaultRoute };

@@ -37,6 +37,9 @@ class Controller {
   async adminCreate() {
     return await new Admin(this.req, this.res, this.next).__createAdmin();
   }
+  async getAdminUpdateCount() {
+    return await new Admin(this.req, this.res, this.next).__getAdminUpdateCount();
+  } 
   async getAdmins() {
     return await new Admin(this.req, this.res, this.next).__getAdmins();
   }
@@ -347,6 +350,29 @@ class Controller {
   async adminGetUserParticularBillPayment() {
     return await new Bill(this.req, this.res, this.next).__adminGetUserParticularBillPayment();
   }
+  
+  async addEmergencyDetails() {
+    return await new Emergency(
+      this.req,
+      this.res,
+      this.next
+    ).__addEmergencyDetails();
+  }
+  async getEmergencyDetails() {
+    return await new Emergency(
+      this.req,
+      this.res,
+      this.next
+    ).__getEmergencyDetails();
+  }
+  async deleteEmergencyDetails() {
+    return await new Emergency(
+      this.req,
+      this.res,
+      this.next
+    ).__deleteEmergencyDetails();
+  }
+  
   
   async userActivateEmergency() {
     return await new Emergency(
@@ -963,20 +989,7 @@ class Controller {
       this.next
     ).__createPostAd();
   }
-  async createPostAdCheckout() {
-    return await new PortalAds(
-      this.req,
-      this.res,
-      this.next
-    ).__createPostAdCheckout();
-  }
-  async getPostAdCheckout() {
-    return await new PortalAds(
-      this.req,
-      this.res,
-      this.next
-    ).__getPostAdCheckout();
-  }
+ 
   async confirmPostAdCheckout() {
     return await new PortalAds(
       this.req,
@@ -984,13 +997,7 @@ class Controller {
       this.next
     ).__confirmPostAdCheckout();
   }
-  async cancelPostAdCheckout() {
-    return await new PortalAds(
-      this.req,
-      this.res,
-      this.next
-    ).__cancelPostAdCheckout();
-  }
+ 
   
   async findAllPostAd() {
     return await new PortalAds(
@@ -1021,12 +1028,12 @@ class Controller {
       this.next
     ).__getPropertyCategory();
   }
-  async updatePropertyAd() {
+  async  deletePropertyAd() {
     return await new PortalAds(
       this.req,
       this.res,
       this.next
-    ).__updatePropertyAd();
+    ).__deletePropertyAd();
   }
   // async createPropertyPostPrice() {
   //   return await new PortalAds(

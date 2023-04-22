@@ -86,7 +86,54 @@ class Admin extends Authentication {
       admins: foundAdmins,
     });
   }
+  async __getAdminUpdateCount() {
+    const createdOn = new Date();
+    const adminId = (this.res.admin && this.res.admin._id) || "";
+    const admin = this.res.admin || "";
 
+    if (!isValidMongoObject(admin) || !isValidMongoObjectId(adminId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "invalid admin",
+      });
+    }
+    const { _id: estateId } = this.res.estate || "";
+    if (!isValidMongoObjectId(estateId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "invalid estate id",
+      });
+    }
+    const foundEstate = await this.__findEstate(estateId);
+    if (!isValidMongoObject(foundEstate)) {
+      return foundEstate;
+    }
+
+    const updates = {};
+
+    if (!!this.res.adminCount && !isNaN(this.res.adminCount)) {
+      updates.adminCount = this.res.adminCount;
+    }
+    if (!!this.res.houseCount && !isNaN(this.res.houseCount)) {
+      updates.houseCount = this.res.houseCount;
+    }
+    if (!!this.res.residentCount && !isNaN(this.res.residentCount)) {
+      updates.residentCount = this.res.residentCount;
+    }
+    if (!!this.res.forumCount && !isNaN(this.res.forumCount)) {
+      updates.forumCount = this.res.forumCount;
+    }
+    if (!!this.res.electionCount && !isNaN(this.res.electionCount)) {
+      updates.electionCount = this.res.electionCount;
+    }
+ 
+    return this.res.json({
+      success: true,
+      updates,
+    });
+  }
   async __getAdmin() {
     const createdOn = new Date();
     const currentadminId = (this.res.admin && this.res.admin._id) || "";
@@ -483,9 +530,9 @@ class Admin extends Authentication {
       return foundUser;
     }
 
-    if(!foundUser.isVerified){
-      return responseBody.ErrorResponse(this.res, "Account not yet verified");
-    }
+    // if(!foundUser.isVerified){
+    //   return responseBody.ErrorResponse(this.res, "Account not yet verified");
+    // }
     const foundUserEstate = await UserEstate.findOne({
       status: 1,
       estateId,
@@ -2202,7 +2249,7 @@ class Admin extends Authentication {
 
     const existingElections = await Poll.find({
       status: 1,
-      // estateId,
+      estateId,
     });
     if (!isValidArrayOfMongoObject(existingElections)) {
       this.res.statusCode = 500;
@@ -2223,13 +2270,13 @@ class Admin extends Authentication {
     const adminId = (this.res.admin && this.res.admin._id) || "";
     const admin = this.res.admin || "";
 
-    if (Number(admin.role) > 2 && !stringIsEqual(admin.isTopmost, 1)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "you are not permitted to make this request",
-      });
-    }
+    // if (Number(admin.role) > 2 && !stringIsEqual(admin.isTopmost, 1)) {
+    //   this.res.statusCode = 400;
+    //   return this.res.json({
+    //     success: false,
+    //     message: "you are not permitted to make this request",
+    //   });
+    // }
 
     if (!isValidMongoObject(admin) || !isValidMongoObjectId(adminId)) {
       this.res.statusCode = 400;
@@ -2251,16 +2298,16 @@ class Admin extends Authentication {
       return foundEstate;
     }
 
-    const electionName = this.req.body.name || "";
+    // const electionName = this.req.body.name || "";
     let electionRole = this.req.body.role || "";
-    const electionType = this.req.body.type || "";
-    if (electionName.length < 3) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "You didn't provide a valid election name  ",
-      });
-    }
+    // const electionType = this.req.body.type || "";
+    // if (electionName.length < 3) {
+    //   this.res.statusCode = 400;
+    //   return this.res.json({
+    //     success: false,
+    //     message: "You didn't provide a valid election name  ",
+    //   });
+    // }
 
     if (!electionRole || electionRole.length < 3) {
       this.res.statusCode = 400;
@@ -2269,21 +2316,21 @@ class Admin extends Authentication {
         message: "invalid  election Role",
       });
     }
-    if (isNaN(electionType)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "invalid  election type",
-      });
-    }
+    // if (isNaN(electionType)) {
+    //   this.res.statusCode = 400;
+    //   return this.res.json({
+    //     success: false,
+    //     message: "invalid  election type",
+    //   });
+    // }
     electionRole = electionRole.toLowerCase().trim();
-    electionRole = electionRole.split(" ").join("_");
+    // electionRole = electionRole.split(" ").join("_");
 
     const existingPoll = await Poll.findOne({
       status: 1,
       estateId,
       role: electionRole,
-      type: electionType,
+      // type: electionType,
     });
 
     if (isValidMongoObject(existingPoll)) {
@@ -2296,9 +2343,9 @@ class Admin extends Authentication {
 
     const newlyCreatedElectionPoll = await new Poll({
       status: 1, //0:deleted,1:active
-      value: electionName,
+      // value: electionName,
       estateId,
-      type: electionType, //0:exco, 1:others
+      // type: electionType, //0:exco, 1:others
       role: electionRole,
       createdOn,
       createdBy: adminId,
@@ -2315,6 +2362,7 @@ class Admin extends Authentication {
     return this.res.json({
       success: true,
       message: "Election Created Successfully",
+      role:newlyCreatedElectionPoll
     });
   }
 
@@ -2323,13 +2371,13 @@ class Admin extends Authentication {
     const adminId = (this.res.admin && this.res.admin._id) || "";
     const admin = this.res.admin || "";
 
-    if (Number(admin.role) > 2 && !stringIsEqual(admin.isTopmost, 1)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "you are not permitted to make this request",
-      });
-    }
+    // if (Number(admin.role) > 2 && !stringIsEqual(admin.isTopmost, 1)) {
+    //   this.res.statusCode = 400;
+    //   return this.res.json({
+    //     success: false,
+    //     message: "you are not permitted to make this request",
+    //   });
+    // }
 
     if (!isValidMongoObject(admin) || !isValidMongoObjectId(adminId)) {
       this.res.statusCode = 400;
@@ -2351,7 +2399,7 @@ class Admin extends Authentication {
       return foundEstate;
     }
 
-    const electionId = this.req.query["electionId"] || "";
+    const electionId = this.req.params["electionId"] || "";
     if (!isValidMongoObjectId(electionId)) {
       this.res.statusCode = 400;
       return this.res.json({
@@ -2387,7 +2435,7 @@ class Admin extends Authentication {
       status: 1,
       name: candidateName,
       estateId,
-      type: existingElection.type,
+      // type: existingElection.type,
       role: existingElection.role,
       electionId: existingElection._id,
       createdOn,
@@ -2601,7 +2649,7 @@ class Admin extends Authentication {
       });
     }
 
-    const electionId = this.req.query["electionId"] || "";
+    const electionId = this.req.params["electionId"] || "";
     if (!isValidMongoObjectId(electionId)) {
       this.res.statusCode = 400;
       return this.res.json({
@@ -2632,19 +2680,14 @@ class Admin extends Authentication {
           _id: electionId,
         },
         {
-          $set: userUpdatableSet,
-          $push: userUpdatablePush,
+          $set: updatableSet,
+          $push: updatablePush,
         }
       );
     } catch (err) {
       console.log(err);
     }
-    if (!isValidArrayOfMongoObject(estateId)) {
-      return this.res.json({
-        success: false,
-        message: "election  not found",
-      });
-    }
+ 
 
     try {
       const updateExistingPoll = await Candidate.updateMany(
@@ -2654,20 +2697,14 @@ class Admin extends Authentication {
           electionId,
         },
         {
-          $set: userUpdatableSet,
-          $push: userUpdatablePush,
+          $set: updatableSet,
+          $push: updatablePush,
         }
       );
     } catch (err) {
       console.log(err);
     }
-    if (!isValidArrayOfMongoObject(existingCandidate)) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message: "election  not found",
-      });
-    }
+ 
 
     try {
       const updateExistingPoll = await Votes.updateMany(
@@ -2677,8 +2714,8 @@ class Admin extends Authentication {
           electionId,
         },
         {
-          $set: userUpdatableSet,
-          $push: userUpdatablePush,
+          $set: updatableSet,
+          $push: updatablePush,
         }
       );
     } catch (err) {
@@ -2687,7 +2724,7 @@ class Admin extends Authentication {
 
     return this.res.json({
       success: true,
-      message: "Admin updated Successfully",
+      message: "Election Deleted Successfully",
     });
   }
 

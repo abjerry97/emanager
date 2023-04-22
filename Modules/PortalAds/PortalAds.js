@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const {
   stringIsEqual,
   isValidMongoObject,
@@ -25,6 +26,8 @@ const Name = require("../../model/name");
 const PropertyAdPostPrice = require("../../model/property-ad-post-price");
 const PropertyAdPayment = require("../../model/property-ad-payment");
 const PropertyAdCheckout = require("../../model/property-ad-checkout");
+const UserWalletTransaction = require("../../model/emanager-user-wallet-transaction");
+const secret = process.env.PAYSTACK_SECRET || "qpay";
 class PortalAds {
   constructor(req, res, next) {
     this.req = req;
@@ -213,6 +216,9 @@ class PortalAds {
 
     newlyCreatedPropertyAd.propertyId = addProperty._id;
     addProperty.ads = newlyCreatedPropertyAd;
+    addProperty.createdBy = userId;
+    
+
     addProperty.adType = "Real Estate";
     await newlyCreatedAdDescription.save();
 
@@ -225,270 +231,95 @@ class PortalAds {
       property: addProperty,
     });
   }
-  async __createPostAdCheckout() {
-    const createdOn = new Date();
-    const user = this.res.user || {};
-    const userId = user._id;
-    if (!isValidMongoObjectId(userId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid user",
-      });
-    }
-    const { amount = "", months = "" } = this.req.body || {};
-    const { propertyAdId = "" } = this.req.params || {};
-
-    if (!isValidMongoObjectId(propertyAdId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid property Ad Id",
-      });
-    }
-
-    const existingPropertyAd = await PropertyAd.findOne({
-      status: 1,
-      _id: propertyAdId,
-    });
-
-    if (!isValidMongoObject(existingPropertyAd)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...property Ad not found",
-      });
-    }
-    if (isNaN(amount) || amount < 100) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message:
-          "invalid amount specified, please Provide a valid property amount",
-      });
-    }
-    if (isNaN(months) || months < 0) {
-      this.res.statusCode = 400;
-      return this.res.json({
-        success: false,
-        message:
-          "invalid number of months specified, please Provide a valid value",
-      });
-    }
-    const unformattedownerPhone =
-      user.phoneNumbers && Array.isArray(user.phoneNumbers)
-        ? user.phoneNumbers.find((phoneNumbers) =>
-            stringIsEqual(!!phoneNumbers.isPrimary && phoneNumbers.isPrimary, 1)
-          )
-        : {};
-
-    const ownerPhone =
-      `${unformattedownerPhone?.countryCode}` +
-      `${unformattedownerPhone.value}`;
-    const ownerEmail =
-      user.emails && Array.isArray(user.emails)
-        ? user.emails.find((email) =>
-            stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
-          ).value
-        : "";
-    const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
-      status: 1,
-      ownerId: userId,
-      propertyId: existingPropertyAd.propertyId,
-      amount: amount || 0,
-      months: months || 0,
-      propertyAdId,
-      phonenumber: ownerPhone,
-      email: ownerEmail,
-      createdOn,
-      createdBy: userId,
-    });
-
-    if (!isValidMongoObject(newlyCreatedPropertyAdCheckout)) {
-      this.res.statusCode = 500;
-      return this.res.json({
-        success: false,
-        message: "Sorry! error while creating  Property Checkout",
-      });
-    }
-
-    await newlyCreatedPropertyAdCheckout.save();
-    return this.res.json({
-      success: true,
-      message: " Property Checkout Succesfully",
-      checkout: newlyCreatedPropertyAdCheckout,
-    });
-  }
-
-  async __getPostAdCheckout() {
-    const createdOn = new Date();
-    const user = this.res.user || {};
-    const userId = user._id;
-    const { propertyAdId } = this.req.params || "";
-    if (!isValidMongoObjectId(propertyAdId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid property Ad Id",
-      });
-    }
-    if (!isValidMongoObjectId(userId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid user",
-      });
-    }
-
-    const existingPropertyAd = await PropertyAd.findOne({
-      status: 1,
-      _id: propertyAdId,
-    });
-
-    if (!isValidMongoObject(existingPropertyAd)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...property Ad not found",
-      });
-    }
-
-    const existingPropertyAdCheckout = await PropertyAdCheckout.findOne({
-      status: 1,
-      propertyAdId,
-      createdBy: userId,
-    });
-
-    if (!isValidMongoObject(existingPropertyAdCheckout)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message:
-          "property Ad not found Checkout, proceed to creating new payment",
-      });
-    }
-
-    return this.res.json({
-      success: true,
-      message: " Property Checkout gotten Succesfully",
-      checkout: existingPropertyAdCheckout,
-    });
-  }
 
   async __confirmPostAdCheckout() {
     const createdOn = new Date();
-    const user = this.res.user || {};
-    const userId = user._id;
-    const confirm = this.req.query["success"] || "";
-    const { checkoutId } = this.req.params || "";
-    if (!isValidMongoObjectId(checkoutId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid checkout Id",
-      });
-    }
-    if (!isValidMongoObjectId(userId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid user",
-      });
-    }
-
-    let existingPropertyAdCheckout = await PropertyAdCheckout.findOne({
-      status: 1,
-      _id: checkoutId,
-    });
-
-    if (!isValidMongoObject(existingPropertyAdCheckout)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...property Ad Checkout not found",
-      });
-    }
-    if (!stringIsEqual(confirm, "true") && !stringIsEqual(confirm, "false")) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "Provide a valid confirm params",
-      });
-    }
-
-    try {
-      existingPropertyAdCheckout = await PropertyAdCheckout.findOneAndUpdate(
-        {
+    //validate event
+    const hash = crypto
+      .createHmac("sha512", secret)
+      .update(JSON.stringify(this.req.body))
+      .digest("hex");
+    if (hash == this.req.headers["x-paystack-signature"]) {
+      // Retrieve the request's body
+      const event = this.req.body;
+      // Do something with event
+      const { phone, name, amount, months, propertyAdId, userId, referrer } =
+        event?.data?.metadata || {};
+      let updateexistingPropertyAdTitle = ``;
+      try {
+        const newlyCreatedPropertyAdCheckout = await new PropertyAdCheckout({
           status: 1,
-          _id: checkoutId,
-        },
-        {
-          $set: { paidStatus: true },
-          $push: {},
-        },
-        { new: true }
-      );
-    } catch (error) {}
+          event: event.event,
+          phone,
+          months,
+          amount,
+          propertyAdId,
+          userId,
+          referrer,
+          paystackResponse: event,
+          createdOn,
+        });
+        if (isValidMongoObject(newlyCreatedPropertyAdCheckout)) {
+          await newlyCreatedPropertyAdCheckout.save();
+        }
+        let isSuccesful = stringIsEqual(event.event, "charge.success");
+        if (isSuccesful) {
+          const updateexistingPropertyAd = await PropertyAd.findOneAndUpdate(
+            {
+              status: 1,
+              _id: propertyAdId,
+            },
+            {
+              $set: {
+                isPublished: true,
+                // isApproved: true,
+                isActive: true,
+              },
+            },
+            { new: true }
+          );
 
-    return this.res.json({
-      success: true,
-      message: " Property Checkout Succesfully",
-      checkout: existingPropertyAdCheckout,
-    });
-  }
+          if (isValidMongoObject(updateexistingPropertyAd)) {
+            const updateexistingProperty = await Property.findOneAndUpdate(
+              {
+                status: 1,
+                _id: updateexistingPropertyAd.propertyId,
+              },
+              {
+                $set: {
+                  ads: updateexistingPropertyAd,
+                  isPublished: true,
+                  // isApproved: true,
+                  isActive: true,
+                },
+              },
+              { new: true }
+            );
 
-  async __cancelPostAdCheckout() {
-    const createdOn = new Date();
-    const user = this.res.user || {};
-    const userId = user._id;
-    const { checkoutId } = this.req.params || "";
-    if (!isValidMongoObjectId(checkoutId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid checkout Id",
-      });
+            updateexistingPropertyAdTitle = updateexistingPropertyAd?.title;
+          }
+
+          const newAdPaymentTransaction = await new UserWalletTransaction({
+            status: 1,
+            type: "propertyAd",
+            name,
+            amount,
+            isSuccesful,
+            isDebit: false,
+            ownerId: userId,
+            estateId: "63a4c7fa4fd539874dd4bbf7", //to remove
+            message: `Add payment for + ${updateexistingPropertyAdTitle}`,
+            createdOn,
+          });
+
+          await newAdPaymentTransaction.save();
+        }
+      } catch (error) {
+        console.log(error);
+      }
     }
-    if (!isValidMongoObjectId(userId)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...Invalid user",
-      });
-    }
 
-    let existingPropertyAdCheckout = await PropertyAdCheckout.findOne({
-      status: 1,
-      _id: checkoutId,
-    });
-
-    if (!isValidMongoObject(existingPropertyAdCheckout)) {
-      this.res.statusCode = 401;
-      return this.res.json({
-        success: false,
-        message: "sorry!...property Ad Checkout not found",
-      });
-    }
-
-    try {
-      existingPropertyAdCheckout = await PropertyAdCheckout.findOneAndUpdate(
-        {
-          status: 1,
-          _id: checkoutId,
-        },
-        {
-          $set: { status: 0 },
-          $push: {},
-        },
-        { new: true }
-      );
-    } catch (error) {}
-
-    return this.res.json({
-      success: true,
-      message: " Property Checkout canceled Succesfully",
-      checkout: existingPropertyAdCheckout,
-    });
+    this.res.sendStatus(200);
   }
 
   async __createAdImage(PropertyAdId, userId, files) {
@@ -986,6 +817,9 @@ class PortalAds {
     const createdOn = new Date();
     const query = {
       status: 1,
+      isPublished: true,
+      isApproved: true,
+      isActive: true,
     };
     const pageSize = this.req.query["pageSize"] || "";
     const location = this.req.query["location"] || "";
@@ -1021,7 +855,7 @@ class PortalAds {
       isAvaliable: 1,
       isPublished: 1,
       isApproved: 1,
-      isActive: 1,  
+      isActive: 1,
       "price.value": 1,
       "description.value": 1,
       // " details.value": 1,
@@ -1103,81 +937,7 @@ class PortalAds {
       propertyAd: foundPropertyAd,
     });
   }
-
-  //   async __getPostAdsByLocation() {
-  //     const createdOn = new Date();
-  //     const location = this.req.query["location"] || "";
-
-  //     const foundPostAds = await PostAd.find({
-  //       status: 1,
-  //       location: { $regex: new RegExp(`${location}`, "i") },
-  //     }).limit(16);
-
-  //     if (!isValidArrayOfMongoObject(foundPostAds)) {
-  // this.res.statusCode = 400
-  //       return this.res.json({
-  //         success: false,
-  //         message: "No Ads found",
-  //       });
-  //     }
-  //     return this.res.json({
-  //       success: true,
-  //       message: "Ads found",
-  //       postAds: foundPostAds,
-  //     });
-  //   }
-
-  //   async __getPostAdsByCategory() {
-  //     const createdOn = new Date();
-  //     // validate name
-  //     const Category = this.req.query["category"] || "";
-  //     const type = this.req.query["type"] || "";
-
-  //     const foundCategory = await PostAd.find({
-  //       status: 1,
-  //       category: { $regex: new RegExp(`${Category}`, "i") },
-  //       type: { $regex: new RegExp(`${type}`, "i") },
-  //     });
-
-  //     if (!isValidArrayOfMongoObject(foundCategory)) {
-  // this.res.statusCode = 404
-  //       return this.res.json({
-  //         success: false,
-  //         message: "No Category found",
-  //       });
-  //     }
-
-  //     return this.res.json({
-  //       success: true,
-  //       message: "Ads found",
-  //       postAds: foundCategory,
-  //     });
-  //   }
-
-  // async __findSearch() {
-  //     const createdOn = new Date();
-
-  //     const search = this.req.body.search || "";
-
-  //     const foundSearch = await PostAds.find({
-  //       status: 1,
-  //       $text: { $search: search, $diacriticSensitive: true },
-  //     });
-
-  //     if (!isValidArrayOfMongoObject(foundSearch)) {
-  // this.res.statusCode = 404
-  //       return this.res.json({
-  //         success: false,
-  //         message: "No Category found",
-  //       });
-  //     }
-
-  //     return this.res.json({
-  //       success: true,
-  //       message: "Ads found",
-  //       postAds: foundSearch,
-  //     });
-  //   }
+ 
 
   async __getPropertyLocations() {
     const createdOn = new Date();
@@ -1216,216 +976,90 @@ class PortalAds {
       message: "Locations found",
       locations: foundSearch,
     });
-  }
+  } 
 
-  //   async __findPostAdWithQueryString() {
-  //     const createdOn = new Date();
-  //     // if (!this.req.query["category"] || this.req.query["category"].length < 3) {
-  //     //     return this.res.json([]);
-  //     // }
-
-  //     let foundPostAd = await this.__findSale(this.req.query);
-
-  //     if (!isValidArrayOfMongoObject(foundPostAd)) {
-  //       foundPostAd = [];
-  //     } else
-  //       foundPostAd = foundPostAd.map((foundPostAd) => {
-  //         return {
-  //           category: foundPostAd.category,
-  //           location: foundPostAd.location,
-  //           addDetails: foundPostAd.addDetails,
-  //           carSpace: foundPostAd.carSpace,
-  //           Title: foundPostAd.Title,
-  //           bedroom: foundPostAd.bedroom,
-  //           _id: foundPostAd._id,
-  //         };
-  //       });
-
-  //     return this.res.json({
-  //       success: true,
-  //       message: "PostAd found",
-  //       foundPostAd,
-  //     });
-  //   }
-
-  async __updatePropertyAd() {
+  async __deletePropertyAd() {
     const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
-    const { _id: estateId } = this.res.estate || "";
+    // validate request
 
-    if (!isValidMongoObjectId(userId)) {
+    const admin = this.res.admin || {};
+    const { _id: adminId } = admin || "";
+    if (!isValidMongoObject(admin)) {
+      this.res.statusCode = 404;
       return this.res.json({
         success: false,
-        message: "Invalid user",
+        message: "sorry, admin not found!!!",
       });
     }
-    // if (!isValidMongoObjectId(estateId)) {
-    //   return this.res.json({
-    //     success: false,
-    //     message: "Invalid estate id",
-    //   });
-    // }
 
-    const foundPropertyAd = await PropertyAd.find({});
+    const propertyAdId = this.req.params.propertyAdId; 
+    if (!isValidMongoObjectId(propertyAdId)) {
+      this.res.statusCode = 400;
+      return this.res.json({
+        success: false,
+        message: "Invalid property ad Id",
+      });
+    }
+    const existingPropertyAd = await PropertyAd.findOne({
+      status: 1,
+      _id: propertyAdId,
+    });
 
-    const pushfoundPropertyAd = await Promise.all(
-      foundPropertyAd.map(async (propertyAd, index) => {
-        const contextId = propertyAd.createdBy;
-        const particularPropertyAdId = propertyAd._id;
-        if (isValidMongoObjectId(contextId)) {
-          const updates = {};
-          const foundPropertyPhone = await PhoneNumber.findOne({
-            ownerId: contextId,
-            status: 1,
-            isPrimary: 1,
-          });
-          if (isValidMongoObject(foundPropertyPhone)) {
-            updates.ownerPhone =
-              foundPropertyPhone?.countryCode + foundPropertyPhone?.value;
-          }
-          const foundPropertyEmail = await Email.findOne({
-            ownerId: contextId,
-            status: 1,
-            isPrimary: 1,
-          });
-
-          if (isValidMongoObject(foundPropertyEmail)) {
-            updates.ownerEmail = foundPropertyEmail?.value;
-          }
-          const foundPropertyName = await Name.findOne({
-            ownerId: contextId,
-            status: 1,
-          });
-
-          if (isValidMongoObject(foundPropertyName)) {
-            updates.ownerName = foundPropertyName?.value;
-          }
-
-          const foundAdDescription = await AdDescription.findOne({
-            status: 1,
-            ownerId: particularPropertyAdId,
-          });
-          if (!isValidMongoObject(foundAdDescription)) {
-            const newlyCreatedAdDescription = await new AdDescription({
-              status: 1,
-              ownerId: particularPropertyAdId,
-              createdOn,
-              value: "no description yet",
-            });
-
-            if (isValidMongoObject(newlyCreatedAdDescription)) {
-              updates.description = newlyCreatedAdDescription;
-              await newlyCreatedAdDescription.save();
-            }
-          }
-
-          const foundPrice = await PropertyAdPrice.findOne({
-            status: 1,
-            propertyId: particularPropertyAdId,
-          });
-          if (!isValidMongoObject(foundPrice)) {
-            const newlyCreatedAdDescription = await new PropertyAdPrice({
-              status: 1,
-              propertyAdId: particularPropertyAdId,
-              createdOn,
-              type: propertyAd.group,
-            });
-
-            if (isValidMongoObject(foundPrice)) {
-              updates.price = foundPrice;
-              await foundPrice.save();
-            }
-          }
-
-          try {
-            const updateProperty = await PropertyAd.updateOne(
-              {
-                _id: particularPropertyAdId,
-              },
-              {
-                $set: updates,
-              }
-            );
-          } catch (error) {
-            console.log(error);
-          }
+    if (!isValidMongoObject(existingPropertyAd)) {
+      this.res.statusCode = 404;
+      return this.res.json({
+        success: false,
+        message: "Property ad not found",
+      });
+    }
+    try {
+      const updateexistingPropertyAd = await PropertyAd.updateOne(
+        {
+          status: 1,
+          _id: propertyAdId,
+        },
+        {
+          $set: {
+            status: 0,
+          },
         }
-      })
-    );
+      );
+    } catch (error) {
+      console.log(error);
+    }
+    const propertyUpdate = {};
+    const existingPropertyPropertyAds = await PropertyAd.find({
+      status: 1,
+      propertyId: existingPropertyAd.propertyId,
+    });
+
+    if (
+      isValidArrayOfMongoObject(existingPropertyPropertyAds) &&
+      existingPropertyPropertyAds.length < 1
+    ) {
+      propertyUpdate.status = 0;
+    }
+
+    propertyUpdate.ads = existingPropertyPropertyAds;
+    try {
+      const updateexistingPropertyAd = await Property.updateOne(
+        {
+          status: 1,
+          propertyId: existingPropertyAd.propertyId,
+        },
+        {
+          $set: propertyUpdate,
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
 
     return this.res.json({
       success: true,
-      message: "Property Updated Successfully",
+      message: `Property Deleted Succesfully`,
     });
-  }
-
-  // async __createPropertyPostPrice() {
-  //   const createdOn = new Date();
-  //   // validate request
-
-  //   const admin = this.res.admin || {};
-  //   const { _id: adminId } = admin || "";
-
-  //   if (!isValidMongoObject(admin)) {
-  //     this.res.statusCode = 404;
-  //     return this.res.json({
-  //       success: false,
-  //       message: "sorry, admin not found!!!",
-  //     });
-  //   }
-  //   if (!isValidMongoObjectId(adminId)) {
-  //     this.res.statusCode = 404;
-  //     return this.res.json({
-  //       success: false,
-  //       message: "Invalid admin",
-  //     });
-  //   }
-
-  //   // const rawbillType = this.req.params.billType || "";
-  //   const amount = this.req.body.amount;
-  //   // const billType = rawbillType.trim();
-  //   if (isNaN(amount)) {
-  //     this.res.statusCode = 400;
-  //     return this.res.json({
-  //       success: false,
-  //       message: "Invalid Amount",
-  //     });
-  //   }
-
-  //   const existingPropertyAdPostPrice = await PropertyAdPostPrice.findOne({
-  //     status: 1,
-  //   });
-
-  //   if (isValidMongoObject(existingPropertyAdPostPrice)) {
-  //     this.res.statusCode = 409;
-  //     return this.res.json({
-  //       success: false,
-  //       message: "Property Ad Price already created",
-  //     });
-  //   }
-
-  //   const newPropertyAdPostPrice = await new PropertyAdPostPrice({
-  //     status: 1, //0:deleted,1:active
-  //     currency: 0,
-  //     value: amount,
-  //     createdOn,
-  //     createdBy: adminId,
-  //   });
-  //   if (!isValidMongoObject(newPropertyAdPostPrice)) {
-  //     this.res.statusCode = 500;
-  //     return this.res.json({
-  //       success: false,
-  //       message: "property ad price not created",
-  //     });
-  //   }
-  //   await newPropertyAdPostPrice.save();
-
-  //   return this.res.json({
-  //     success: true,
-  //     message: "Price created Succesfully",
-  //     adPrice: newPropertyAdPostPrice,
-  //   });
-  // }
+  } 
 
   async __getPropertyPostPrice() {
     const createdOn = new Date();
@@ -1611,7 +1245,7 @@ class PortalAds {
     }
 
     try {
-      const updateexistingPropertyAd = await PropertyAd.updateMany(
+      const updateexistingPropertyAd = await PropertyAd.updateOne(
         {
           status: 1,
           propertyId: propertyId,
