@@ -1740,6 +1740,18 @@ class Resident extends Authentication {
     if (!!this.res.propertyCount && !isNaN(this.res.propertyCount)) {
       updates.propertyCount = this.res.propertyCount;
     }
+
+    if (!!this.res.guestCount && !isNaN(this.res.guestCount)) {
+      updates.guestCount = this.res.guestCount;
+    }
+    if (!!this.res.activeElectionCount && !isNaN(this.res.activeElectionCount)) {
+      updates.activeElectionCount = this.res.activeElectionCount;
+    }
+    // if (!!this.res.walletBalance && !isNaN(this.res.walletBalance)) {
+    //   updates.walletBalance = this.res.walletBalance;
+    // }
+    updates.walletBalance = this.res.walletBalance;
+    
     return this.res.json({
       success: true,
       updates,
