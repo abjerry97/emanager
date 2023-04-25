@@ -20,6 +20,8 @@ const userSchemaObject = {
   status: defaultString, //0:deleted,1:active
   type: defaultString,  
   isVerified: defaultBoolean,
+  isFamilyMember: defaultBoolean,
+  isTemporaryUser: defaultBoolean,
   name: { _id: defaultString, ...Name.getSchemaObject() },
   emails: [{ _id: defaultString, ...Email.getSchemaObject() }],
   phoneNumbers: [{ _id: defaultString, ...PhoneNumber.getSchemaObject() }],
@@ -28,6 +30,7 @@ const userSchemaObject = {
   fromPortal:defaultBoolean,
   houseAddress: [{ _id: defaultString, ...HouseAddressName.getSchemaObject() }],
   joinedOn: defaultDate,
+  validTill: defaultDate,
   updates: [
     {
       by: defaultString, // admin ID of the admin who made this update

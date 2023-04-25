@@ -17,6 +17,8 @@ const UserNotifications = require("../model/user-notifications");
 const UserEstate = require("../model/user-estate");
 const House = require("../model/house");
 const Poll = require("../model/poll");
+const Guest = require("../model/guest");
+const EmanagerWallet = require("../Modules/EmanagerWallet/EmanagerWallet");
 require("dotenv").config();
  
 
@@ -192,6 +194,50 @@ const refreshUserUpdates = async (req, res, next) => {
   }
 
   res.propertyCount = currentEstatePropertyLinkingCount;
+
+
+  const guestCount =
+    await Guest.countDocuments({
+      status: "1",
+      estateId,
+      createdBy: userId 
+    });
+
+  if (isNaN(guestCount)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...guest count process error",
+    });
+  }
+
+  res.guestCount = guestCount;
+
+
+  const activeElectionCount =
+    await Poll.countDocuments({
+      status: "1",
+      estateId, 
+    });
+
+  if (isNaN(activeElectionCount)) {
+    return res.json({
+      success: false,
+      message: "Sorry!!...active Count count process error",
+    });
+  }
+
+  res.activeElectionCount = activeElectionCount;
+
+const userAccountBalance = await new EmanagerWallet(req,res).__generateBalance()
+//  console.log(userAccountBalance)
+if (!isValidMongoObject(userAccountBalance)) {
+  return res.json({
+    success: false,
+    message: "Sorry!!...error getting wallet balance",
+  });
+}
+res.walletBalance =userAccountBalance.value
+
   next();
 };
 const refreshAdminUpdates = async (req, res, next) => {

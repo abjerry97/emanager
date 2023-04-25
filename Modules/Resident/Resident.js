@@ -1,3 +1,4 @@
+let moment = require('moment')
 const { isHashedString, formatPhonenumber } = require("../../helpers/tools");
 const {
   stringIsEqual,
@@ -162,8 +163,46 @@ class Resident extends Authentication {
       message: "Mode gotten Succesfully",
       mode: foundUserMode,
     });
-  }  
+  }
+  async __getCurrentEstate() {
+    const createdOn = new Date();
+    // validate request
 
+    const userId = (this.res.user && this.res.user._id) || "";
+    const { _id: estateId } = this.res.estate || "";
+    if (!isValidMongoObjectId(userId)) {
+      return this.res.json({
+        success: false,
+        message: "Invalid user",
+      });
+    }
+    if (!isValidMongoObjectId(estateId)) {
+      return this.res.json({
+        success: false,
+        message: "Invalid estate id",
+      });
+    }
+
+    const foundEstate= await RegisteredEstate.findOne({
+      status: 1, 
+      id: estateId,
+    });
+    if (!isValidMongoObject(foundEstate)) {
+      return this.res.json({
+        success: false,
+        message: "error getting Estate",
+      });
+    }
+    //0:avaliable,1:travel
+
+    return this.res.json({
+      success: true,
+      message: "Current Estate Gotten Succesfully",
+      estate:foundEstate 
+    });
+  }
+
+ 
   async __editUserProfile() {
     const createdOn = new Date();
     // validate request
@@ -570,27 +609,27 @@ class Resident extends Authentication {
       houseOwnerType: updatedUser.houseOwnerType,
       email:
         !!updatedUser &&
-        !!updatedUser.emails &&
-        Array.isArray(updatedUser.emails)
+          !!updatedUser.emails &&
+          Array.isArray(updatedUser.emails)
           ? updatedUser.emails.find((email) =>
-              stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
-            )?.value
+            stringIsEqual(!!email.isPrimary && email.isPrimary, 1)
+          )?.value
           : "",
       phoneNumber:
         !!updatedUser &&
-        !!updatedUser.phoneNumbers &&
-        Array.isArray(updatedUser.phoneNumbers)
+          !!updatedUser.phoneNumbers &&
+          Array.isArray(updatedUser.phoneNumbers)
           ? updatedUser.phoneNumbers.find((phoneNumber) =>
-              stringIsEqual(!!phoneNumber.isPrimary && phoneNumber.isPrimary, 1)
-            )?.value
+            stringIsEqual(!!phoneNumber.isPrimary && phoneNumber.isPrimary, 1)
+          )?.value
           : "",
       houseAddress:
         !!updatedUser &&
-        !!updatedUser.houseAddress &&
-        Array.isArray(updatedUser.houseAddress)
+          !!updatedUser.houseAddress &&
+          Array.isArray(updatedUser.houseAddress)
           ? updatedUser.houseAddress.find((houseAddress) =>
-              stringIsEqual(estateId, houseAddress.estateId)
-            )?.value
+            stringIsEqual(estateId, houseAddress.estateId)
+          )?.value
           : "",
 
       //  user.houseAddress.value
@@ -635,7 +674,11 @@ class Resident extends Authentication {
     const newUserFamilyMemberEmail = this.req.body.email || "";
     const newUserFamilyMemberRelationship = this.req.body.relationship || "";
     const newUserFamilyMemberPasscode = this.req.body.password || "1111";
+    const fromDate = (moment(this.req.body.from, 'YYYY-MM-DD', true).isValid()) ?new Date (this.req.body.from) : new Date()
+    const toDate = (moment(this.req.body.to, 'YYYY-MM-DD', true).isValid()) ? new Date( this.req.body.to) : null; 
 
+    const isTemporaryUser = !!toDate; 
+     
     if (!isEmail(newUserFamilyMemberEmail)) {
       return this.res.json({
         success: false,
@@ -868,14 +911,19 @@ class Resident extends Authentication {
       ) {
         const newlyCreatedFamilyMemberUser = await new User({
           status: 1,
-          type: "e-manager", 
+          type: "e-manager",
           name: newlyCreatedFamilyMemberName,
           apartmentType: user.apartmentType,
           houseAddress: user.houseAddress,
           joinedOn: createdOn,
-          isAdmin:0,
+          isAdmin: 0,
           createdBy: userId,
-          isVerified: "false"
+          isVerified: "false",
+          isFamilyMember: true,
+          validTill: toDate,
+          isTemporaryUser
+
+
         });
 
         familyMemberUser = newlyCreatedFamilyMemberUser;
@@ -946,6 +994,9 @@ class Resident extends Authentication {
       createdOn,
       relationship: newUserFamilyMemberRelationship,
       houseAddressId: foundOwnerHouseAddress._id,
+      fromDate,
+      toDate,
+      isTemporaryUser
     });
 
     await newlyCreatedFamilyMemberUserFamily.save();
@@ -1005,14 +1056,15 @@ class Resident extends Authentication {
 
     const allEstateFamilyUser = await Promise.all(
       (foundEstateUserFamily || []).map(async (userFamily, count) => {
+ 
         const estateUser = await User.findOne({
           status: 1,
           _id: userFamily.ownerId || "",
         });
 
         if (isValidMongoObject(estateUser)) {
-          estateUser.relationship=foundEstateUserFamily.relationship
-          return estateUser;
+          
+          return {relationship:userFamily.relationship,...estateUser.toObject()};
         }
       })
     );
@@ -1722,7 +1774,7 @@ class Resident extends Authentication {
     const updates = {};
 
     if (!!this.res.notificationCount && !isNaN(this.res.notificationCount)) {
-      updates.notificationCount =  this.res.notificationCount;
+      updates.notificationCount = this.res.notificationCount;
     }
     if (!!this.res.foodsCount && !isNaN(this.res.foodsCount)) {
       updates.foodsCount = this.res.foodsCount;
@@ -1740,6 +1792,18 @@ class Resident extends Authentication {
     if (!!this.res.propertyCount && !isNaN(this.res.propertyCount)) {
       updates.propertyCount = this.res.propertyCount;
     }
+
+    if (!!this.res.guestCount && !isNaN(this.res.guestCount)) {
+      updates.guestCount = this.res.guestCount;
+    }
+    if (!!this.res.activeElectionCount && !isNaN(this.res.activeElectionCount)) {
+      updates.activeElectionCount = this.res.activeElectionCount;
+    }
+    // if (!!this.res.walletBalance && !isNaN(this.res.walletBalance)) {
+    //   updates.walletBalance = this.res.walletBalance;
+    // }
+    updates.walletBalance = this.res.walletBalance;
+
     return this.res.json({
       success: true,
       updates,
@@ -1941,9 +2005,9 @@ class Resident extends Authentication {
     await newUserMode.save();
     await newUserEstate.save();
 
-    res.estate = existingUserRegisteredEstate;
-    res.houseAddress = newHouseAddress;
-    res.family = newUserFamily;
+    this.res.estate = existingUserRegisteredEstate;
+    this.res.houseAddress = newHouseAddress;
+    this.res.family = newUserFamily;
     return this.res.json({
       success: true,
       message: " Successfully registered under new Estate",
@@ -1972,7 +2036,20 @@ class Resident extends Authentication {
     }
 
     const selectedEstateId = this.req.query["estateId"] || "";
+if(!isValidMongoObjectId(selectedEstateId))
+{
+  return this.res.json({
+    success: false,
+    message: "Invalid Estate Id",
+  });
+}
 
+if (stringIsEqual(selectedEstateId,estateId)){
+  return this.res.json({
+    success: false,
+    message: "Already Logged in under this estate",
+  });
+}
     const existingRegisteredEstate = await RegisteredEstate.findOne({
       status: 1,
       _id: selectedEstateId,
@@ -2020,9 +2097,9 @@ class Resident extends Authentication {
         message: "User Family data not found",
       });
     }
-    res.estate = existingUserRegisteredEstate;
-    res.houseAddress = existingUserHouseAddress;
-    res.family = existingUserFamily;
+    this.res.estate = existingUserRegisteredEstate;
+    this.res.houseAddress = existingUserHouseAddress;
+    this.res.family = existingUserFamily;
 
     return this.res.json({
       success: true,

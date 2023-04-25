@@ -67,7 +67,10 @@ setInterval(verifyEmail, 1000);
   router.route("/user/estates").get(isAuth, (req, res, next) => {
     return new Controller(req, res, next).getAllUserEstates();
   });
-
+  router.route("/user/estates/current").get(isAuth, (req, res, next) => {
+    return new Controller(req, res, next).getCurrentEstate();
+  });
+  
   router.route("/user/estates/add").post(isAuth, (req, res, next) => {
     return new Controller(req, res, next).addUserEstates();
   });
@@ -75,7 +78,13 @@ setInterval(verifyEmail, 1000);
   router.route("/user/estates/change").post(isAuth, (req, res, next) => {
     return new Controller(req, res, next).switchUserEstates();
   });
+  router.route("/family/create").post(isAuth, (req, res, next) => {
+    return new Controller(req, res, next).createFamilyMember();
+  });
 
+
+
+  
   router
     .route("/election/candidate")
     .get(isAuth, travelMode, (req, res, next) => {
@@ -96,7 +105,7 @@ setInterval(verifyEmail, 1000);
 
   router
     .route("/business/default/image")
-    .post(isAuth, upload.single("image"), (req, res, next) => {
+    .post(isAuth, upload.single("image"), (rq, res, next) => {
       return new Controller(req, res, next).addDefaultBusinessImage();
     });
 

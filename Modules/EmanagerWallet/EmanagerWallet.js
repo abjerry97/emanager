@@ -22,6 +22,7 @@ const UserWalletTransaction = require("../../model/emanager-user-wallet-transact
 const { generateWalletToken } = require("../../utils/tokenGenerator");
 const responseBody = require("../../helpers/responseBody");
 const scheamaTools = require("../../helpers/scheamaTools");
+const { sendPhoneNovuNotification } = require("../../utils/NovuNotifications/NovuNotification");
 const qpaypassword = 1994;
 class EmanagerWallet {
   constructor(req, res) {
@@ -1171,6 +1172,60 @@ class EmanagerWallet {
     return walletService;
   }
 
+  async __sendSms(payload) {
+    const createdOn = new Date();
+    if (!isValidMongoObject(this.res.user)) {
+      return this.res.json({
+        success: false,
+        message: "Sorry!!...You are not Authorized",
+      });
+    }
+    const phone =  payload.phone || "";   
+
+    if (!isValidPhonenumber(phone)) {
+      return this.res.json({
+        success: false,
+        message: "Provide a valid phonenumber",
+      });
+    }
+
+    const novuSms = await sendPhoneNovuNotification(phone,{
+     payload: payload.message
+      },
+      "verify-email"
+    );
+
+
+    if (!!novuSms && !!novuSms.status && novuSms.status < 400){
+    try {
+ 
+      const newWithdrawRequest = await this.__withdrawFromWalletAccount({
+        isSuccesful: true,
+        ...walletService.response,
+        name: name.value,
+        statusCode: walletService.response.status,
+        serverStatus: walletService.response.data.status,
+        walletId,
+        ...walletService.response.data,
+        ...payload,createdOn
+      });
+      if (!isValidMongoObject(newWithdrawRequest)) {
+        return newWithdrawRequest;
+      }
+
+      return this.res.json({
+        success: true,
+        message: `${message} success`,
+        data: walletService.data || {},
+      });
+    }
+   catch (error) {
+      console.log(error);
+    }
+}
+
+    return walletService;
+  }
   async __buyData() {
     const createdOn = new Date();
     if (!isValidMongoObject(this.res.user)) {
