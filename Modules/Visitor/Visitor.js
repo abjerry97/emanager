@@ -247,7 +247,8 @@ class Visitor {
     const user = this.res.user
     const userId = (this.res.user && this.res.user._id) || "";
     const { _id: estateId } = this.res.estate || "";
-
+    const duration = !isNaN(this.req.body.duration) ?  this.req.body.duration : null
+    const DEFAULT_DURATON = 900 //15 minutes
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
@@ -292,6 +293,7 @@ class Visitor {
       estateId,
       ownerName:user.name.value,
       houseAddress: foundUserHouseAddress,
+      createdOn
     });
 
     if (!isValidMongoObject(newGuest)) {
@@ -307,7 +309,7 @@ class Visitor {
       });
     }
 
-    const name = await this.__createGuestName(this.req.body.name || "");
+    const name = await this.__createGuestName(this.req.body.name?.trim() || "");
 
     if (!isValidMongoObject(name)) {
       return name;
@@ -368,7 +370,8 @@ class Visitor {
       estateId,
     });
     randomCode.createdOn = createdOn;
-    randomCode.expiresOn = new Date(createdOn.getTime() + 9000000000);
+    randomCode.expiresOn = new Date(createdOn.getTime() +  1000 * (duration || DEFAULT_DURATON) //15 minutes 
+    );
     randomCode.checkedOn = ""
     // 900000
     // 900000

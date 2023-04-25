@@ -570,6 +570,16 @@ class Controller {
     ).__getEstateFamilyMember();
   }
 
+  async getCurrentEstate() {
+    return await new Resident(
+      this.req,
+      this.res,
+      this.next
+    ).__getCurrentEstate();
+  }
+
+
+  
   async editUserProfile() {
     return await new Resident(
       this.req,

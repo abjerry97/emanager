@@ -9,8 +9,9 @@ let isValidMongoObjectId = (str) => {
   return finalValue;
 };
 const isValidFullName = (name) => {
+  const newName = name?.trim()
   let regName = /^[a-zA-Z]+ [a-zA-Z]+$/;
-  if (!regName.test(name)) {
+  if (!regName.test(newName)) {
     return false;
   } else {
     return true;

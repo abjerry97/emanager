@@ -1219,7 +1219,7 @@ class EmanagerWallet {
         data: walletService.data || {},
       });
     }
-    } catch (error) {
+   catch (error) {
       console.log(error);
     }
 }

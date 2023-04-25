@@ -17,6 +17,7 @@ const userFamilySchemaObject = {
   houseAddressId: defaultString,
   isHouseOwner: defaultBoolean, //0:not house owner,1:house owner
   relationship: defaultString,
+  isTemporaryUser: defaultBoolean,
   updates: [
     {
       by: defaultString, //user ID of the user who made this update
@@ -25,6 +26,8 @@ const userFamilySchemaObject = {
     },
   ],
   createdBy: defaultString, // user ID of the user who created this entry
+  fromDate: defaultDate,
+  toDate: defaultDate,
   createdOn: defaultDate,
 };
 const UserFamilySchema = new mongoose.Schema(userFamilySchemaObject);
