@@ -17,7 +17,7 @@
  *       200:
  *         description: Returns current user details.
  */
- 
+
 
 /**
  * @swagger
@@ -170,6 +170,25 @@
  *     responses:
  *       200:
  *         description: get config json.
+ */
+ 
+
+/**
+ * @swagger
+ *  paths:
+ *  /user/estates/delete:
+ *    post:
+ *      summary: delete user estate.
+ *      consumes:
+ *        - application/x-www-form-urlencoded
+ *      parameters:
+ *        - in: query
+ *          name: estateId
+ *          required: true
+ *          type: string
+ *      responses:
+ *        200:
+ *          description: OK
  */
 
 /**

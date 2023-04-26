@@ -108,7 +108,14 @@ class Controller {
       this.next
     ).__getAllUserEstates();
   }
-
+  async __deleteUserEstates() {
+    return await new Resident(
+      this.req,
+      this.res,
+      this.next
+    ).__deleteUserEstates();
+  }
+  
   async addUserEstates() {
     return await new Resident(this.req, this.res, this.next).__addUserEstates();
   }

@@ -67,6 +67,11 @@ setInterval(verifyEmail, 1000);
   router.route("/user/estates").get(isAuth, (req, res, next) => {
     return new Controller(req, res, next).getAllUserEstates();
   });
+  router.route("/user/estates/delete").delete(isAuth, (req, res, next) => {
+    return new Controller(req, res, next).__deleteUserEstates();
+  });
+
+
   router.route("/user/estates/current").get(isAuth, (req, res, next) => {
     return new Controller(req, res, next).getCurrentEstate();
   });
