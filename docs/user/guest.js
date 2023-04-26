@@ -61,6 +61,10 @@
  *          name: numberOfGuests
  *          type: number
  *          description: number of guests.
+ *        - in: formData
+ *          name: duration
+ *          type: number
+ *          description: duration of guests.
  *      responses:
  *        200:
  *          description: Returns generated passes
@@ -95,6 +99,10 @@
  *          name: numberOfGuests
  *          type: number
  *          description: number of guests.
+ *        - in: formData
+ *          name: duration
+ *          type: number
+ *          description: duration of guests.
  *      responses:
  *        200:
  *          description: Returns generated passes
@@ -124,6 +132,10 @@
  *          name: numberOfGuests
  *          type: number
  *          description: number of guests.
+ *        - in: formData
+ *          name: duration
+ *          type: number
+ *          description: duration of guests.
  *      responses:
  *        200:
  *          description: Returns generated passes
@@ -153,6 +165,10 @@
  *          name: numberOfGuests
  *          type: number
  *          description: number of guests.
+ *        - in: formData
+ *          name: duration
+ *          type: number
+ *          description: duration of guests.
  *      responses:
  *        200:
  *          description: Returns generated passes
