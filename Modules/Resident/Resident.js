@@ -183,8 +183,8 @@ class Resident extends Authentication {
       });
     }
 
-    const foundEstate= await RegisteredEstate.findOne({
-      status: 1, 
+    const foundEstate = await RegisteredEstate.findOne({
+      status: 1,
       id: estateId,
     });
     if (!isValidMongoObject(foundEstate)) {
@@ -198,11 +198,11 @@ class Resident extends Authentication {
     return this.res.json({
       success: true,
       message: "Current Estate Gotten Succesfully",
-      estate:foundEstate 
+      estate: foundEstate
     });
   }
 
- 
+
   async __editUserProfile() {
     const createdOn = new Date();
     // validate request
@@ -674,11 +674,11 @@ class Resident extends Authentication {
     const newUserFamilyMemberEmail = this.req.body.email || "";
     const newUserFamilyMemberRelationship = this.req.body.relationship || "";
     const newUserFamilyMemberPasscode = this.req.body.password || "1111";
-    const fromDate = (moment(this.req.body.from, 'YYYY-MM-DD', true).isValid()) ?new Date (this.req.body.from) : new Date()
-    const toDate = (moment(this.req.body.to, 'YYYY-MM-DD', true).isValid()) ? new Date( this.req.body.to) : null; 
+    const fromDate = (moment(this.req.body.from, 'YYYY-MM-DD', true).isValid()) ? new Date(this.req.body.from) : new Date()
+    const toDate = (moment(this.req.body.to, 'YYYY-MM-DD', true).isValid()) ? new Date(this.req.body.to) : null;
 
-    const isTemporaryUser = !!toDate; 
-     
+    const isTemporaryUser = !!toDate;
+
     if (!isEmail(newUserFamilyMemberEmail)) {
       return this.res.json({
         success: false,
@@ -1056,15 +1056,15 @@ class Resident extends Authentication {
 
     const allEstateFamilyUser = await Promise.all(
       (foundEstateUserFamily || []).map(async (userFamily, count) => {
- 
+
         const estateUser = await User.findOne({
           status: 1,
           _id: userFamily.ownerId || "",
         });
 
         if (isValidMongoObject(estateUser)) {
-          
-          return {relationship:userFamily.relationship,...estateUser.toObject()};
+
+          return { relationship: userFamily.relationship, ...estateUser.toObject() };
         }
       })
     );
@@ -1860,31 +1860,31 @@ class Resident extends Authentication {
         message: "invalid user",
       });
     }
-    const { _id: estateId } = this.res.estate || "";
 
-    if (!isValidMongoObjectId(estateId)) {
-      return this.res.json({
-        success: false,
-        message: "invalid estate id",
-      });
-    }
 
-    const existingRegisteredEstate = await RegisteredEstate.find({
+
+    const existingRegisteredEstate = await UserEstate.find({
       status: 1,
       ownerId: userId,
     });
 
-    if (!isValidArrayOfMongoObject(existingRegisteredEstate)) {
-      return this.res.json({
-        success: false,
-        message: "error finding Registered Estates",
-      });
-    }
+    const allUserEstates = await Promise.all(
+      (existingRegisteredEstate || []).map(async (userEstate, count) => {
+
+        const estate = await RegisteredEstate.findOne({
+          status: 1,
+          _id: userEstate.estateId || "",
+        });
+
+        return estate.toObject();
+      })
+    );
+
 
     return this.res.json({
       success: true,
       message: "Existing User Registered Estate gotten Successfully",
-      existingRegisteredEstate,
+      allUserEstates,
     });
   }
   async __addUserEstates() {
@@ -1909,6 +1909,13 @@ class Resident extends Authentication {
 
     const selectedEstateId = this.req.query["estateId"] || "";
 
+    if (!isValidMongoObjectId(selectedEstateId)) {
+
+      return this.res.json({
+        success: false,
+        message: "invalid selected estate id",
+      });
+    }
     const existingRegisteredEstate = await RegisteredEstate.findOne({
       status: 1,
       _id: selectedEstateId,
@@ -1951,7 +1958,7 @@ class Resident extends Authentication {
       apartmentType
     );
 
-    if (!sValidMongoObject(newHouseAddress)) {
+    if (!isValidMongoObject(newHouseAddress)) {
       return newHouseAddress;
     }
 
@@ -1975,7 +1982,7 @@ class Resident extends Authentication {
       0
     );
 
-    if (!sValidMongoObject(newUserEstate)) {
+    if (!isValidMongoObject(newUserEstate)) {
       return newUserEstate;
     }
     const newUserMode = await this.__createUserMode(
@@ -1984,19 +1991,19 @@ class Resident extends Authentication {
       0
     );
 
-    if (!sValidMongoObject(newUserMode)) {
+    if (!isValidMongoObject(newUserMode)) {
       return newUserMode;
     }
     const newUserFamily = await this.__createUserFamily(
       userId,
       selectedEstateId,
       0,
-      houseAddressId,
+      newHouseAddress._id,
       false,
-      owner
+      "owner"
     );
 
-    if (!sValidMongoObject(newUserFamily)) {
+    if (!isValidMongoObject(newUserFamily)) {
       return newUserFamily;
     }
 
@@ -2012,7 +2019,126 @@ class Resident extends Authentication {
       success: true,
       message: " Successfully registered under new Estate",
       existingRegisteredEstate,
-      token: generateToken(user, existingUserRegisteredEstate._id),
+      token: generateToken(user, newUserEstate.estateId),
+    });
+  }
+  async __deleteUserEstates() {
+    const createdOn = new Date();
+    const userId = (this.res.user && this.res.user._id) || "";
+    const user = this.res.user || "";
+
+    if (!isValidMongoObject(user) || !isValidMongoObjectId(userId)) {
+      return this.res.json({
+        success: false,
+        message: "invalid user",
+      });
+    }
+    const { _id: estateId } = this.res.estate || "";
+
+    if (!isValidMongoObjectId(estateId)) {
+      return this.res.json({
+        success: false,
+        message: "invalid estate id",
+      });
+    }
+
+    const selectedEstateId = this.req.query["estateId"] || "";
+
+    if (!isValidMongoObjectId(selectedEstateId)) {
+
+      return this.res.json({
+        success: false,
+        message: "invalid selected estate id",
+      });
+    }
+    const existingRegisteredEstate = await RegisteredEstate.findOne({
+      status: 1,
+      _id: selectedEstateId,
+    });
+
+    if (!isValidMongoObject(existingRegisteredEstate)) {
+      return this.res.json({
+        success: false,
+        message: "Selected Estate does not exist",
+      });
+    }
+
+
+    try {
+      const updateUserMode = await HouseAddressName.updateOne(
+        {
+          status: 1,
+          ownerId: userId,
+          estateId,
+        },
+        {
+          $set: { status: "0" },
+        }
+      );
+    } catch (err) {
+      console.log(err);
+    }
+
+
+
+
+
+    try {
+      const updateUserMode = await UserEstate.updateOne(
+        {
+          status: 1,
+          ownerId: userId,
+          estateId,
+        },
+        {
+          $set: { status: "0" },
+        }
+      );
+    } catch (err) {
+      console.log(err);
+    }
+
+
+
+
+
+    try {
+      const updateUserMode = await UserMode.updateOne(
+        {
+          status: 1,
+          userId,
+          estateId,
+        },
+        {
+          $set: { status: "0" },
+        }
+      );
+    } catch (err) {
+      console.log(err);
+    }
+
+
+
+    try {
+      const updateUserMode = await UserFamily.updateOne(
+        {
+          status: 1,
+          ownerId: userId,
+          estateId,
+        },
+        {
+          $set: { status: "0" },
+        }
+      );
+    } catch (err) {
+      console.log(err);
+    }
+
+
+
+    return this.res.json({
+      success: true,
+      message: " Successfully deleted registered Estate",
     });
   }
   async __switchUserEstates() {
@@ -2036,20 +2162,19 @@ class Resident extends Authentication {
     }
 
     const selectedEstateId = this.req.query["estateId"] || "";
-if(!isValidMongoObjectId(selectedEstateId))
-{
-  return this.res.json({
-    success: false,
-    message: "Invalid Estate Id",
-  });
-}
+    if (!isValidMongoObjectId(selectedEstateId)) {
+      return this.res.json({
+        success: false,
+        message: "Invalid Estate Id",
+      });
+    }
 
-if (stringIsEqual(selectedEstateId,estateId)){
-  return this.res.json({
-    success: false,
-    message: "Already Logged in under this estate",
-  });
-}
+    if (stringIsEqual(selectedEstateId, estateId)) {
+      return this.res.json({
+        success: false,
+        message: "Already Logged in under this estate",
+      });
+    }
     const existingRegisteredEstate = await RegisteredEstate.findOne({
       status: 1,
       _id: selectedEstateId,
