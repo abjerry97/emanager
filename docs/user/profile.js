@@ -57,6 +57,14 @@
  *          name: password
  *          type: number
  *          description: A new family member  password.
+ *        - in: formData
+ *          name: from
+ *          type: date
+ *          description: A new family member from date
+ *        - in: formData
+ *          name: to
+ *          type: date
+ *          description: A new family to date.
  *      responses:
  *        200:
  *          description: Returns created family member
