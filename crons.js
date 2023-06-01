@@ -100,7 +100,7 @@ if(shouldverifyEmailRun){
               } else if (!unverifiedEmail.isMailSent) {
                 const result = await sendEmailNovuNotification(
                   unverifiedEmail.value,
-                  `https://emanager.onrender.com/user/account/verify/${unverifiedEmail.token}`,
+                  {data:`${process.env.BASE_URL || "https://emanager.onrender.com"}/user/account/verify/${unverifiedEmail.token}`},
                   "verify-email"
                 );
   

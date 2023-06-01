@@ -688,12 +688,23 @@ class Controller {
   async sendPass() {
     return await new Visitor(this.req, this.res, this.next).__sendPass();
   }
+  async sendPassEmail() {
+    return await new Visitor(this.req, this.res, this.next).__sendPassEmail();
+  }
+  async sendPassSms() {
+    return await new Visitor(this.req, this.res, this.next).__sendPassSms();
+  }
   async invalidatePasses() {
     return await new Visitor(this.req, this.res, this.next).__invalidatePass();
   }
   async getGuests() {
     return await new Visitor(this.req, this.res, this.next).__getAllGuests();
   }
+  async deleteGuest() {
+    return await new Visitor(this.req, this.res, this.next).__deleteGuest();
+  }
+
+  
   async adminInfo() {
     return await new Authentication(
       this.req,

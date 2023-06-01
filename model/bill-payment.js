@@ -23,6 +23,7 @@ const BillPaymentSchemaObject = {
   ownerName: defaultString,
   ownerAddress: defaultString,
   history:  [{ _id: defaultString, ...BillPaymentHistory.getSchemaObject() }],
+  outstanding: defaultString,
   from: defaultString,
   to: defaultString,
   type:defaultString,//0:Estate Levy,1:Water Bill,2:waste Bill,1:Project Fee

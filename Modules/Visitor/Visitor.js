@@ -5,54 +5,172 @@ const {
   isValidMongoObjectId,
   isValidArrayOfMongoObject,
   isEmail,
-} = require("../../helpers/validators");
-const GuestCompanyName = require("../../model/guest-company-name");
-const GuestName = require("../../model/guest-name");
-const GuestPhoneNumber = require("../../model/guest-phone-number");
-const GuestPlateNumber = require("../../model/guest-plate-number");
+} = require('../../helpers/validators')
+const GuestCompanyName = require('../../model/guest-company-name')
+const GuestName = require('../../model/guest-name')
+const GuestPhoneNumber = require('../../model/guest-phone-number')
+const GuestPlateNumber = require('../../model/guest-plate-number')
 
-const Guest = require("../../model/guest"); 
-const GatePass = require("../../model/gate-pass");
-const HouseAddressName = require("../../model/house-address");
-const { formatPhonenumber } = require("../../helpers/tools");
-const GuestEmail = require("../../model/guest-email");
-const { generateCode } = require("../../utils/GatePasses/GatePasses");
+const Guest = require('../../model/guest')
+const GatePass = require('../../model/gate-pass')
+const HouseAddressName = require('../../model/house-address')
+const { formatPhonenumber } = require('../../helpers/tools')
+const GuestEmail = require('../../model/guest-email')
+const { generateCode } = require('../../utils/GatePasses/GatePasses')
+const {
+  sendEmailNovuNotification,
+  sendPhoneNovuNotification,
+} = require('../../utils/NovuNotifications/NovuNotification')
+const RegisteredEstate = require('../../model/registered-estate')
 class Visitor {
   constructor(req, res, next) {
-    this.req = req;
-    this.res = res;
-    this.next = next;
+    this.req = req
+    this.res = res
+    this.next = next
   }
 
+  async __findEstate(estateId) {
+    if (!isValidMongoObjectId(estateId)) {
+      return this.res.json({
+        success: false,
+        message: 'Invvalid Estate Id',
+      })
+    }
+    const foundRegisteredEstate = await RegisteredEstate.findOne({
+      status: 1,
+      _id: estateId,
+    })
+
+    if (!isValidMongoObject(foundRegisteredEstate)) {
+      return this.res.json({
+        success: false,
+        message: 'Estate not found',
+      })
+    }
+    return foundRegisteredEstate
+  }
   async __sendPass() {
-    const { passId } = this.req.params;
+    const { passId } = this.req.params
 
-    const foundPass = this.__getPass(passId);
+    const foundPass = this.__getPass(passId)
     if (!isValidMongoObject(foundPass)) {
-      return foundPass;
+      return foundPass
     }
 
-    const foundGuest = this.__getGuest(foundPass.guestId);
+    const foundGuest = this.__getGuest(foundPass.guestId)
     if (!isValidMongoObject(foundGuest)) {
-      return foundGuest;
+      return foundGuest
     }
+  }
+  async __sendPassEmail() {
+    const { passId } = this.req.params
+    const { _id: estateId } = this.res.estate || ''
+    const userId = (this.res.user && this.res.user._id) || ''
+    const email = this.req.body.email || ''
+    const foundRegisteredEstate = await this.__findEstate(estateId)
+
+    if (!isEmail(email)) {
+      return this.res.json({
+        success: false,
+        message: 'Provide a valid email',
+      })
+    }
+    if (!isValidMongoObject(foundRegisteredEstate)) {
+      return foundRegisteredEstate
+    }
+
+    const foundPass = await this.__getPass(passId)
+    if (!isValidMongoObject(foundPass)) {
+      return foundPass
+    }
+
+    const foundGuest = await this.__getGuest(foundPass.guestId)
+    if (!isValidMongoObject(foundGuest)) {
+      return foundGuest
+    }
+    const result = await sendEmailNovuNotification(
+      email,
+      {
+        pass: foundPass.value,
+        estate: `${foundRegisteredEstate.name} ${foundRegisteredEstate.location}`,
+      },
+      'send-pass-email',
+    )
+
+    if (!!result && !!result.status && result.status < 400)
+      return this.res.json({
+        success: true,
+        message: 'Mail sent Successfully',
+      })
+    else
+      return this.res.json({
+        success: false,
+        message: 'Email not sent, please try again',
+      })
+  }
+  async __sendPassSms() {
+    const { passId } = this.req.params
+    const { _id: estateId } = this.res.estate || ''
+    const userId = (this.res.user && this.res.user._id) || ''
+    const phone = this.req.body.phone || ''
+    const foundRegisteredEstate = await this.__findEstate(estateId)
+
+    if (!isValidPhonenumber(phone)) {
+      return this.res.json({
+        success: false,
+        message: 'Provide a valid phonenumber',
+      })
+    }
+    if (!isValidMongoObject(foundRegisteredEstate)) {
+      return foundRegisteredEstate
+    }
+
+    const foundPass = await this.__getPass(passId)
+    if (!isValidMongoObject(foundPass)) {
+      return foundPass
+    }
+
+    const foundGuest = await this.__getGuest(foundPass.guestId)
+    if (!isValidMongoObject(foundGuest)) {
+      return foundGuest
+    }
+    const result = await sendPhoneNovuNotification(
+      `${formatPhonenumber(phone)[0]}${formatPhonenumber(phone)[1]}`,
+      {
+        pass: foundPass.value,
+        estate: `${foundRegisteredEstate.name} ${foundRegisteredEstate.location}`,
+      },
+      'send-pass-sms',
+    )
+
+    console.log(result)
+    if (!!result && !!result.status && result.status < 400)
+      return this.res.json({
+        success: true,
+        message: 'Message sent Successfully',
+      })
+    else
+      return this.res.json({
+        success: false,
+        message: 'Message not sent, please try again',
+      })
   }
 
   async __createGuestName(guestName) {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
 
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     if (!isValidFullName(guestName)) {
       return this.res.json({
         success: false,
         message: "You didn't provide a valid name",
-      });
+      })
     }
 
     const newGuestName = await new GuestName({
@@ -60,21 +178,21 @@ class Visitor {
       value: guestName,
       createdBy: userId,
       createdOn,
-    });
+    })
 
     if (!isValidMongoObject(newGuestName)) {
       return this.res.json({
         success: false,
-        message: "Error while creating guest",
-      });
+        message: 'Error while creating guest',
+      })
     }
 
-    return newGuestName;
+    return newGuestName
   }
 
   async __createGuestCompanyName(guestCompanyName) {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
     // if (!isValidFullName(guestCompanyName)) {
     //   return this.res.json({
     //     success: false,
@@ -84,123 +202,123 @@ class Visitor {
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     const newGuestCompanyName = await new GuestCompanyName({
       status: 1, //0:inactive,1:active
       value: guestCompanyName,
       createdOn,
       createdBy: userId,
-    });
+    })
 
     if (!isValidMongoObject(newGuestCompanyName)) {
       return this.res.json({
         success: false,
-        message: "Error while creating Guest Company Name",
-      });
+        message: 'Error while creating Guest Company Name',
+      })
     }
 
-    return newGuestCompanyName;
+    return newGuestCompanyName
   }
 
   async __createGuestPlateNumber(guestPlateNumber) {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
     if (isValidFullName(guestPlateNumber)) {
       return this.res.json({
         success: false,
-        message: "Invalid PlateNumber specified",
-      });
+        message: 'Invalid PlateNumber specified',
+      })
     }
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     const newGuestPlateNumber = await new GuestPlateNumber({
       status: 1, //0:inactive,1:active
       value: guestPlateNumber,
       createdOn,
       createdBy: userId,
-    });
+    })
 
     if (!isValidMongoObject(newGuestPlateNumber)) {
       return this.res.json({
         success: false,
-        message: "Error while creating Guest Plate Number",
-      });
+        message: 'Error while creating Guest Plate Number',
+      })
     }
 
-    return newGuestPlateNumber;
+    return newGuestPlateNumber
   }
   async __createGuestPhonenumber(phone) {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     if (!isValidPhonenumber(phone)) {
       return this.res.json({
         success: false,
-        message: "phonenumber not valid",
-      });
+        message: 'phonenumber not valid',
+      })
     }
-    const formattedPhone = formatPhonenumber(phone);
+    const formattedPhone = formatPhonenumber(phone)
     const newPhonenumber = await new GuestPhoneNumber({
       status: 1, //0:inactive,1:active
       value: formattedPhone[1],
       countryCode: formattedPhone[0],
       createdOn,
       createdBy: userId,
-    });
+    })
 
     if (!isValidMongoObject(newPhonenumber)) {
       return this.res.json({
         success: false,
-        message: "Error while creating phonenumber",
-      });
+        message: 'Error while creating phonenumber',
+      })
     }
 
-    return newPhonenumber;
+    return newPhonenumber
   }
   async __createGuestEmail(email) {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     if (!isEmail(email)) {
       return this.res.json({
         success: false,
-        message: "email not valid",
-      });
+        message: 'email not valid',
+      })
     }
     const newPhonenumber = await new GuestEmail({
       status: 1, //0:inactive,1:active
       value: email,
       createdOn,
       createdBy: userId,
-    });
+    })
 
     if (!isValidMongoObject(newPhonenumber)) {
       return this.res.json({
         success: false,
-        message: "Error while creating phonenumber",
-      });
+        message: 'Error while creating phonenumber',
+      })
     }
 
-    return newPhonenumber;
+    return newPhonenumber
   }
   async __invalidatePass() {
-    const createdOn = new Date();
+    const createdOn = new Date()
     // await GatePass({}, { $set: { status: '0' } } )
 
     await GatePass.bulkWrite([
@@ -212,18 +330,18 @@ class Visitor {
             // _id: { $ne: newlyCreatedFoodOptionPrice._id },
           },
           update: {
-            $set: { status: "0" },
+            $set: { status: '0' },
           }, // Changed in MongoDB 4.2
           upsert: false,
         },
       },
-    ]);
+    ])
 
-    const foundPasses = await GatePass.find({});
+    const foundPasses = await GatePass.find({})
 
     const pushUserPasses = await Promise.all(
       foundPasses.map(async (foundPass, index) => {
-        const contextId = foundPass.guestId;
+        const contextId = foundPass.guestId
 
         if (isValidMongoObjectId(contextId)) {
           try {
@@ -233,46 +351,119 @@ class Visitor {
               },
               {
                 $set: { pass: foundPass },
-              }
-            );
+              },
+            )
           } catch (error) {
-            console.log(error);
+            console.log(error)
           }
         }
+      }),
+    )
+  }
+  async __deletePass(passId) {
+    const createdOn = new Date()
+
+    if (isValidMongoObjectId(passId)) {
+      try {
+        const updatePass = await GatePass.findOneAndUpdate(
+          {
+            _id: passId,
+          },
+          {
+            $set: { status: 2 },
+          },
+          { new: true },
+        )
+
+        if (isValidMongoObject(updatePass)) {
+          const updateGuest = await Guest.updateOne(
+            {
+              _id: updatePass.guestId,
+            },
+            {
+              $set: { pass: updatePass },
+            },
+          )
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+  }
+  async __deleteGuest() {
+    const createdOn = new Date()
+    const guestId = this.req.params.guestId || ''
+    if (!isValidMongoObjectId(guestId)) {
+      return this.res.json({
+        success: false,
+        message: 'Invalid guestId',
       })
-    );
+    }
+    const foundGuest = await this.__getGuest(guestId)
+
+    if (!isValidMongoObject(foundGuest)) {
+      return foundGuest
+    }
+
+    const passId = foundGuest?.pass?._id || ''
+
+    await this.__deletePass(passId)
+    try {
+      const updateGuest = await Guest.updateOne(
+        {
+          _id: guestId,
+        },
+        {
+          $set: { status: 2 },
+        },
+      )
+    } catch (error) {
+      console.log(error)
+    }
+    return this.res.json({
+      success: true,
+      message: 'Guest deleted Succesfully',
+    })
   }
   async __createGuest(type) {
-    const createdOn = new Date();
+    const createdOn = new Date()
     const user = this.res.user
-    const userId = (this.res.user && this.res.user._id) || "";
-    const { _id: estateId } = this.res.estate || "";
-    const duration = !isNaN(this.req.body.duration) ?  this.req.body.duration : null
+    const userId = (this.res.user && this.res.user._id) || ''
+    const { _id: estateId } = this.res.estate || ''
+    const duration = !isNaN(this.req.body.duration)
+      ? this.req.body.duration
+      : null
     const DEFAULT_DURATON = 900 //15 minutes
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     if (!isValidMongoObjectId(estateId)) {
       return this.res.json({
         success: false,
-        message: "Invalid estate id",
-      });
+        message: 'Invalid estate id',
+      })
+    }
+
+    const foundRegisteredEstate = await this.__findEstate(estateId)
+
+    if (!isValidMongoObject(foundRegisteredEstate)) {
+      return foundRegisteredEstate
     }
 
     const foundUserHouseAddress = await HouseAddressName.findOne({
       status: 1,
       ownerId: userId,
       estateId,
-    });
+    })
 
     if (!isValidMongoObject(foundUserHouseAddress)) {
       return this.res.json({
         success: false,
-        message: "House Address not found",
-      });
+        message: 'House Address not found',
+      })
     }
 
     if (
@@ -283,84 +474,84 @@ class Visitor {
     ) {
       return this.res.json({
         success: false,
-        message: "Invalid type specified",
-      });
+        message: 'Invalid type specified',
+      })
     }
 
     const newGuest = await new Guest({
       status: 1,
       ownerType: 2,
       estateId,
-      ownerName:user.name.value,
+      ownerName: user.name.value,
       houseAddress: foundUserHouseAddress,
-      createdOn
-    });
+      createdOn,
+    })
 
     if (!isValidMongoObject(newGuest)) {
       return this.res.json({
         success: false,
-        message: "Error while creating guest",
-      });
+        message: 'Error while creating guest',
+      })
     }
     if (!isValidMongoObjectId(newGuest._id)) {
       return this.res.json({
         success: false,
-        message: "Error while creating guest",
-      });
+        message: 'Error while creating guest',
+      })
     }
 
-    const name = await this.__createGuestName(this.req.body.name?.trim() || "");
+    const name = await this.__createGuestName(this.req.body.name?.trim() || '')
 
     if (!isValidMongoObject(name)) {
-      return name;
+      return name
     }
     const phoneNumber = await this.__createGuestPhonenumber(
-      this.req.body.phone || ""
-    );
+      this.req.body.phone || '',
+    )
     if (!isValidMongoObject(phoneNumber)) {
-      return phoneNumber;
+      return phoneNumber
     }
-    if (isEmail(this.req.body.email || "")) {
+    if (isEmail(this.req.body.email || '')) {
       const newlyCreatedGuestEmail = await this.__createGuestEmail(
-        this.req.body.email
-      );
+        this.req.body.email,
+      )
       if (!isValidMongoObject(newlyCreatedGuestEmail)) {
-        return newlyCreatedGuestEmail;
+        return newlyCreatedGuestEmail
       }
 
-      newlyCreatedGuestEmail.type = type;
-      newlyCreatedGuestEmail.createdBy = newGuest._id;
-      newlyCreatedGuestEmail.guestId = newGuest._id;
-      await newlyCreatedGuestEmail.save();
-      newGuest.email = newlyCreatedGuestEmail;
+      newlyCreatedGuestEmail.type = type
+      newlyCreatedGuestEmail.createdBy = newGuest._id
+      newlyCreatedGuestEmail.guestId = newGuest._id
+      await newlyCreatedGuestEmail.save()
+      newGuest.email = newlyCreatedGuestEmail
     }
 
     const plateNumber = await this.__createGuestPlateNumber(
-      this.req.body.plateNumber || ""
-    );
+      this.req.body.plateNumber || '',
+    )
 
     if (!isValidMongoObject(plateNumber)) {
-      return plateNumber;
+      return plateNumber
     }
 
-    name.type = type;
-    name.guestId = newGuest._id;
-    name.createdBy = userId;
-    await name.save();
-    newGuest.name = name;
+    name.type = type
+    name.guestId = newGuest._id
+    name.createdBy = userId
+    await name.save()
+    newGuest.name = name
 
-    phoneNumber.type = type;
-    userId;
-    phoneNumber.guestId = newGuest._id;
-    phoneNumber.createdBy = userId;
-    await phoneNumber.save();
-    newGuest.phoneNumber = phoneNumber;
+    phoneNumber.type = type
+    userId
+    phoneNumber.guestId = newGuest._id
+    phoneNumber.createdBy = userId
+    await phoneNumber.save()
+    newGuest.phoneNumber = phoneNumber
 
-    plateNumber.type = type;
-    plateNumber.guestId = newGuest._id;
-    plateNumber.createdBy = userId;
-    await plateNumber.save();
-    newGuest.plateNumber = plateNumber;
+    plateNumber.type = type
+    plateNumber.guestId = newGuest._id
+    plateNumber.createdBy = userId
+    await plateNumber.save()
+    newGuest.plateNumber = plateNumber
 
     const randomCode = await new GatePass({
       status: 1,
@@ -368,104 +559,105 @@ class Visitor {
       guestId: newGuest._id,
       createdBy: userId,
       estateId,
-    });
-    randomCode.createdOn = createdOn;
-    randomCode.expiresOn = new Date(createdOn.getTime() +  1000 * (duration || DEFAULT_DURATON) //15 minutes 
-    );
-    randomCode.checkedOn = ""
+    })
+    randomCode.createdOn = createdOn
+    randomCode.expiresOn = new Date(
+      createdOn.getTime() + 1000 * (duration || DEFAULT_DURATON), //15 minutes
+    )
+    randomCode.checkedOn = ''
     // 900000
     // 900000
     switch (Number(type)) {
       case 0: {
         const companyName = await this.__createGuestCompanyName(
-          this.req.body.companyName || ""
-        );
+          this.req.body.companyName || '',
+        )
 
         if (!isValidMongoObject(companyName)) {
-          return companyName;
+          return companyName
         }
-        companyName.type = 0;
-        companyName.createdBy = newGuest._id;
-        await companyName.save();
-        newGuest.companyName = companyName;
-        newGuest.createdBy = userId;
-        newGuest.type = 0;
-        randomCode.type = 0;
-        newGuest.pass = randomCode;
-        await newGuest.save();
-        break;
+        companyName.type = 0
+        companyName.createdBy = newGuest._id
+        await companyName.save()
+        newGuest.companyName = companyName
+        newGuest.createdBy = userId
+        newGuest.type = 0
+        randomCode.type = 0
+        newGuest.pass = randomCode
+        await newGuest.save()
+        break
       }
       case 1: {
         const companyName = await this.__createGuestCompanyName(
-          this.req.body.companyName || ""
-        );
+          this.req.body.companyName || '',
+        )
 
         if (!isValidMongoObject(companyName)) {
-          return companyName;
+          return companyName
         }
-        companyName.type = 1;
-        companyName.createdBy = newGuest._id;
-        await companyName.save();
-        newGuest.companyName = companyName;
-        newGuest.createdBy = userId;
-        newGuest.type = 1;
-        randomCode.type = 1;
-        newGuest.pass = randomCode;
-        await newGuest.save();
-        break;
+        companyName.type = 1
+        companyName.createdBy = newGuest._id
+        await companyName.save()
+        newGuest.companyName = companyName
+        newGuest.createdBy = userId
+        newGuest.type = 1
+        randomCode.type = 1
+        newGuest.pass = randomCode
+        await newGuest.save()
+        break
       }
       case 2: {
         if (isNaN(this.req.body.numberOfGuests)) {
           return this.res.json({
             success: false,
-            message: "Invalid number of guests",
-          });
+            message: 'Invalid number of guests',
+          })
         }
-        newGuest.numberOfGuests = this.req.body.numberOfGuests;
-        newGuest.createdBy = userId;
-        newGuest.type = 2;
-        randomCode.type = 2;
-        newGuest.pass = randomCode;
-        await newGuest.save();
-        break;
+        newGuest.numberOfGuests = this.req.body.numberOfGuests
+        newGuest.createdBy = userId
+        newGuest.type = 2
+        randomCode.type = 2
+        newGuest.pass = randomCode
+        await newGuest.save()
+        break
       }
       case 3: {
         if (isNaN(this.req.body.numberOfGuests)) {
           return this.res.json({
             success: false,
-            message: "Invalid number of guests",
-          });
+            message: 'Invalid number of guests',
+          })
         }
-        newGuest.numberOfGuests = this.req.body.numberOfGuests;
-        newGuest.createdBy = userId;
-        newGuest.type = 3;
-        randomCode.type = 3;
-        newGuest.pass = randomCode;
-        await newGuest.save();
-        break;
+        newGuest.numberOfGuests = this.req.body.numberOfGuests
+        newGuest.createdBy = userId
+        newGuest.type = 3
+        randomCode.type = 3
+        newGuest.pass = randomCode
+        await newGuest.save()
+        break
       }
       default: {
         return this.res.json({
           success: false,
-          message: "Error while creating guest",
-        });
+          message: 'Error while creating guest',
+        })
       }
     }
- 
-    randomCode.save();
+
+    randomCode.save()
 
     return this.res.json({
       success: true,
-      message: "Guest Created Successfully",
+      message: 'Guest Created Successfully',
       guest: {
         name: newGuest.name.value,
         numberOfGuests: newGuest.numberOfGuests || 1,
-        plateNumber: newGuest.plateNumber.value || "",
-        companyName: newGuest.companyName.value || "",
-        houseAddress: newGuest.houseAddress.value || "",
-        phoneNumber: newGuest.phoneNumber.value || "",
-        email: newGuest.email.value || "",
-        ownerName: newGuest.ownerName || "",
+        plateNumber: newGuest.plateNumber.value || '',
+        companyName: newGuest.companyName.value || '',
+        houseAddress: newGuest.houseAddress.value || '',
+        phoneNumber: newGuest.phoneNumber.value || '',
+        email: newGuest.email.value || '',
+        ownerName: newGuest.ownerName || '',
         createdOn: newGuest.createdOn,
         createdOn: newGuest.createdOn,
       },
@@ -475,31 +667,31 @@ class Visitor {
         createdOn: randomCode.createdOn,
         expiresOn: randomCode.expiresOn,
       },
-    });
+    })
   }
   async __updateGuest(type) {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
-    const { _id: estateId } = this.res.estate || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
+    const { _id: estateId } = this.res.estate || ''
 
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     if (!isValidMongoObjectId(estateId)) {
       return this.res.json({
         success: false,
-        message: "Invalid estate id",
-      });
+        message: 'Invalid estate id',
+      })
     }
 
-    const foundPasses = await GatePass.find({});
+    const foundPasses = await GatePass.find({})
 
     const pushUserPasses = await Promise.all(
       foundPasses.map(async (foundPass, index) => {
-        const contextId = foundPass.guestId;
+        const contextId = foundPass.guestId
 
         if (isValidMongoObjectId(contextId)) {
           try {
@@ -509,111 +701,117 @@ class Visitor {
               },
               {
                 $set: { pass: foundPass },
-              }
-            );
+              },
+            )
           } catch (error) {
-            console.log(error);
+            console.log(error)
           }
         }
-      })
-    );
+      }),
+    )
 
     return this.res.json({
       success: true,
-      message: "Guest Updated Successfully",
-    });
+      message: 'Guest Updated Successfully',
+    })
   }
 
   async __getAllPasses() {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
-    const { _id: estateId } = this.res.estate || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
+    const { _id: estateId } = this.res.estate || ''
     if (!isValidMongoObjectId(userId)) {
       return this.res.json({
         success: false,
-        message: "Invalid user",
-      });
+        message: 'Invalid user',
+      })
     }
     if (!isValidMongoObjectId(estateId)) {
       return this.res.json({
         success: false,
-        message: "Invalid estate id",
-      });
+        message: 'Invalid estate id',
+      })
     }
 
-    const foundPasses = await GatePass.find({ createdBy: userId, estateId });
+    const foundPasses = await GatePass.find({status: {$lte:1 }, createdBy: userId, estateId })
 
     if (!isValidArrayOfMongoObject(foundPasses)) {
       return this.res.json({
         success: false,
-        message: "Passes not found",
-      });
+        message: 'Passes not found',
+      })
     }
 
     return this.res.json({
       success: true,
-      message: "All passes",
+      message: 'All passes',
       foundPasses,
-    });
+    })
   }
   async __getPass(passId) {
     if (!isValidMongoObjectId(passId)) {
       return this.res.json({
         success: false,
-        message: "Invalid pass id",
-      });
+        message: 'Invalid pass id',
+      })
     }
 
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
     const foundPass = await GatePass.findOne({
       createdBy: userId,
       _id: passId,
       status: 1,
-    });
+    })
 
     if (!isValidMongoObject(foundPass)) {
       return this.res.json({
         success: false,
-        message: "Pass not found",
-      });
+        message: 'Pass not found',
+      })
     }
-    return foundPass;
+    return foundPass
   }
   async __getAllGuests() {
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
-    const pageSize = this.req.query["pageSize"] || "";
-    const page = this.req.query["page"] || "";
-    const foundGuests = await Guest.find({ createdBy: userId })
+    const createdOn = new Date()
+    const { _id: estateId } = this.res.estate || ''
+    if (!isValidMongoObjectId(estateId)) {
+      return this.res.json({
+        success: false,
+        message: 'Invalid estate id',
+      })
+    }
+    const userId = (this.res.user && this.res.user._id) || ''
+    const pageSize = this.req.query['pageSize'] || ''
+    const page = this.req.query['page'] || ''
+    const foundGuests = await Guest.find({status: {$lte:1 }, createdBy: userId, estateId })
       .sort({ createdOn: -1 })
       .limit(pageSize)
-      .skip(pageSize * page);
+      .skip(pageSize * page)
     return this.res.json({
       success: true,
-      message: "All Guests",
+      message: 'All Guests',
       foundGuests,
-    });
+    })
   }
   async __getGuest(guestId) {
     if (!isValidMongoObjectId(guestId)) {
       return this.res.json({
         success: false,
-        message: "Invalid guest id",
-      });
+        message: 'Invalid guest id',
+      })
     }
-    const createdOn = new Date();
-    const userId = (this.res.user && this.res.user._id) || "";
-    const foundGuest = await Guest.findOne({ createdBy: userId, _id: guestId });
-    if (!isValidMongoObject(foundGuests)) {
+    const createdOn = new Date()
+    const userId = (this.res.user && this.res.user._id) || ''
+    const foundGuest = await Guest.findOne({ status: {$lte:1 }, createdBy: userId, _id: guestId })
+    if (!isValidMongoObject(foundGuest)) {
       return this.res.json({
         success: true,
-        message: "Guest not found",
-        foundGuests,
-      });
+        message: 'Guest not found', 
+      })
     }
 
-    return foundGuest;
+    return foundGuest
   }
 }
-module.exports = Visitor;
+module.exports = Visitor

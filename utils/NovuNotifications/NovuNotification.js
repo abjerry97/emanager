@@ -4,7 +4,7 @@ const sendEmailNovuNotification = async (recipient, payload, triggerId) => {
     return sendNovuNotification("email", recipient, payload, triggerId);
   };
   const sendPhoneNovuNotification = async (recipient, payload, triggerId) => {
-    return sendNovuNotification("email", recipient, payload, triggerId);
+    return sendNovuNotification("phone", recipient, payload, triggerId);
   };
   const sendNovuNotification = async (type, recipient, payload, triggerId) => {
     const toObj = {
@@ -15,7 +15,8 @@ const sendEmailNovuNotification = async (recipient, payload, triggerId) => {
       let response = await novu.trigger(triggerId, {
         to: toObj,
         payload: {
-          data: payload,
+           ...payload,
+          domain:process.env.DOMAIN_NAME || "e-manager.netlify.app"
         },
       });
       return response;
