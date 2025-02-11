@@ -73,5 +73,4 @@ Ensure you have the following installed:
 Contributions are welcome! Please open an issue or submit a pull request with improvements.  
 
 ## License  
-This project is licensed under the **MIT License**.  
-```
+This project is licensed under the **MIT License**.   
