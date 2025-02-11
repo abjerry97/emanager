@@ -1,6 +1,3 @@
- 
-
-```markdown
 # eManager  
 
 ## Overview  
